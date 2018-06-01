@@ -9,6 +9,113 @@ from instrument import Instrument
 import numpy as np
 from struct import unpack
 
+class osciloscopio(Instrument):
+    
+    ## comandos del vertical CH1
+    SET_CH1_VDIV=""
+    SET_CH1_COUPLE=""
+    GET_CH1_VDIV=""
+    GET_CH1_COUPLE=""
+    
+    ## comandos de la base de tiempo
+    SET_BT=""
+    GET_BT=""
+    
+    def __init__(self,handler):
+        super().__init__(handler)
+        
+    
+class GW_Instek(osciloscopio):
+    
+    def __init__(self,handler):
+        super().__init__(handler)
+        
+        SET_CH1_VDIV="CH1:SCA {}"
+        GET_CH1_VDIV="CH1:SCA?"
+        
+        
+        self.read_termination = '\r'
+    
+    def get_trace(self,valor, VERBOSE = 1):
+        
+
+        
+        
+        # Pedimos la escala (volt/div)
+        self.write(":CHAN%s:SCAL?"%valor) 
+        scale_1_buff = self.read_raw()
+        scale = float(scale_1_buff)
+        print("Escala: ",scale)
+        
+        # Pedimos el offset de la señal
+        self.write(":CHAN%s:OFFS?"%valor) 
+        offset_1_buff = self.read_raw();
+        offset = float(offset_1_buff)
+        print("Offset: ",offset)
+        
+        # Pedimos la escala de tiempo de la señal
+        self.write(":timebase:scale?") 
+        time_1_buff = self.read_raw();
+        time = float(time_1_buff)
+        print("Base de tiempo: ",time)
+
+        self.write(':ACQ%s:MEM?'%valor)
+        memoria_canal = self.read_bytes(8014, break_term=True)
+        print("Leidos %d datos"%len(memoria_canal))
+        
+        tension_volt = self.Parsear_canal(memoria_canal, offset, scale, 2000, VERBOSE)
+        tiempo_seg = np.arange(0,len(tension_volt),1)*time
+            
+        return tiempo_seg, tension_volt
+    
+    def Parsear_canal(self, memoria_canal, offset, scale, muestras, VERBOSE):
+        if VERBOSE:
+            print('Header en buffer:')
+            print(memoria_canal[0:14])
+        
+        # Leemos el "#4", el comienzo del header de los datos
+        # un char (int 8 bits) litle-endian
+        h  = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=0)
+        f  = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=1)
+    
+        # Leemos el resto del header, tamaño de los datos
+        nn  = np.frombuffer(memoria_canal, dtype=np.int8, count=4, offset=2)
+    
+        # Leemos la base de tiempo
+        tb = np.frombuffer(memoria_canal, dtype=np.uint8, count=4, offset=6) 
+        # Viene en big-endian (IEEE 754), convertimos a little-endian (revertimos el orden de los bytes)
+        t = tb.newbyteorder()
+    
+        # Leemos el numero de canal del que proviene (dado antes por "ACQ#:")
+        ch = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=10)
+    
+        # Sacamos del buffer los 3 bytes reservados
+        r = np.frombuffer(memoria_canal, dtype=np.int8, count=3, offset=11)
+        
+        if VERBOSE:
+            print("Header decodificado:")
+            print(str(chr(h)), str(chr(f)), str(chr(nn[0])), str(chr(nn[1])), str(chr(nn[2])), str(chr(nn[3])), t, ch)
+    
+        # Ahora convertimos los valores del ADC a volts
+        #   is ADCgain the ADC mapping of 10 volts range onto 256 8-bit values
+        #   ... or is it really just a magic constant of 1/25?
+        ADCgain = 10.0/250;  #todo: why not 256?  data matches for 1/25
+    
+        # Leemos 4000 cuentas crudas del ADC
+        # Valores de 16 bits signados, pero el LSB es siempre 0, siendo realmente
+        # valores de 8 bits
+        memoria_np_canal = np.frombuffer(memoria_canal, dtype=np.int16, count=muestras, offset=14)
+        memoria_np_canal = memoria_np_canal/(2**8)
+    
+        v = offset + memoria_np_canal*scale*ADCgain;
+    
+        if VERBOSE:
+            print(memoria_np_canal.shape)
+            print(memoria_np_canal)
+    
+        return v
+
+        
 
 class Tektronix_DSO_DPO_MSO_TDS(Instrument):
     """ clase del tektronix DPO7000, MSO/DPO70000, MSO2000B / DPO2000B, MSO3000 
@@ -34,9 +141,12 @@ class Tektronix_DSO_DPO_MSO_TDS(Instrument):
         self.write(self.SET_CH1_VDIV.format(valor))
 
     def get_ch1_DIV(self):
+        """ Retorna string del factor de division vertical del canal 1"""
         return self.query(self.GET_CH1_VDIV)
         
     def get_trace(self,valor):
+        """retorna una tupla (tiempo,tension) """
+        
         self.write('DATA:SOU CH{}'.format(valor))
         self.write('DATA:WIDTH 1')
         self.write('DATA:ENC RPB')
@@ -82,10 +192,12 @@ class rigol(Instrument):
         self.write(self.SET_CH1_VDIV.format(valor))
     
     def get_ch1_DIV(self):
+        """ Retorna string del factor de division vertical del canal 1"""
         return self.query(self.GET_CH1_VDIV)
         
     def get_trace(self,canal):
-
+        """retorna una tupla (tiempo,tension) del canal especificado """
+        canal=str(canal)
         self.write(":STOP")
  
         # Get the timescale

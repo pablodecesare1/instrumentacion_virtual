@@ -39,3 +39,8 @@ class Instrument:
         """ Implement visa read command """
         
         return self.instrument_handle.read_raw()
+    
+    def read_bytes(self, bytes_read, break_term=True):
+        """ Implement visa read command """
+        
+        return self.instrument_handle.read_bytes(bytes_read , break_on_termchar=break_term)
