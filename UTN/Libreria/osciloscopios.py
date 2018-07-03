@@ -2,53 +2,96 @@
 """
 Created on Thu May 17 09:35:12 2018
 
-@author: Pablo
+@author: Pablo, Ramiro
+
+
+Este módulo contiene las distintas implementaciones de los osciloscopios.
+Cada osciloscopio nuevo se debe implementar en una nueva clase que herede de la
+clase base "osciloscopio"
+
+
 """
 
+# Traemos la clase base que implmenta las funciones de VISA
 from instrument import Instrument
+# Importamos el resto de las funciones a utilizar
 import numpy as np
 from struct import unpack
 
+#------------------------------------------------------------------------------
+#------------------------- BASE CLASS -----------------------------------------
+#------------------------------------------------------------------------------
+
 class osciloscopio(Instrument):
     
-    ## comandos del vertical CH1
-    SET_CH1_VDIV=""
-    SET_CH1_COUPLE=""
-    GET_CH1_VDIV=""
-    GET_CH1_COUPLE=""
-    
-    ## comandos de la base de tiempo
-    SET_BT=""
-    GET_BT=""
-    
-    def __init__(self,handler):
-        super().__init__(handler)
+	def __init__(self,handler):
+
+		## comandos del vertical CH1
+		SET_CH1_VDIV=""
+		SET_CH1_COUPLE=""
+		GET_CH1_VDIV=""
+		GET_CH1_COUPLE=""
+
+		## comandos de la base de tiempo
+		SET_BT=""
+		GET_BT=""
+
+		super().__init__(handler)
+
+	def set_chan_DIV(self,valor,canal):
+		pass
+
+	def get_chan_DIV(self, canal):
+		pass
         
-    
+    	def get_trace(self,canal, VERBOSE = 1)
+		pass
+
+
+
+#------------------------------------------------------------------------------
+#------------------------- GW_Instek ------------------------------------------
+#------------------------------------------------------------------------------
+
+
 class GW_Instek(osciloscopio):
     
     def __init__(self,handler):
         super().__init__(handler)
         
         SET_CH1_VDIV="CH1:SCA {}"
+        SET_CH2_VDIV="CH2:SCA {}"
         GET_CH1_VDIV="CH1:SCA?"
+        GET_CH2_VDIV="CH2:SCA?"
         
         
         self.read_termination = '\r'
     
-    def get_trace(self,valor, VERBOSE = 1):
-        
 
+    def set_chan_DIV(self,valor,canal):
+	if canal == 1: 
+		self.write(self.SET_CH1_VDIV.format(valor))
+	else:
+		self.write(self.SET_CH2_VDIV.format(valor))
+    
+    def get_chan_DIV(self, canal):
+        """ Retorna string del factor de division vertical del canal"""
+	if canal == 1: 
+	        return self.query(self.GET_CH1_VDIV)
+	else
+	        return self.query(self.GET_CH2_VDIV)
+
+    def get_trace(self,canal, VERBOSE = 1):
         
         
         # Pedimos la escala (volt/div)
-        self.write(":CHAN%s:SCAL?"%valor) 
+        self.write(":CHAN%s:SCAL?"%canal) 
         scale_1_buff = self.read_raw()
         scale = float(scale_1_buff)
         print("Escala: ",scale)
         
         # Pedimos el offset de la señal
-        self.write(":CHAN%s:OFFS?"%valor) 
+        self.write(":CHAN%s:OFFS?"%canal) 
         offset_1_buff = self.read_raw();
         offset = float(offset_1_buff)
         print("Offset: ",offset)
@@ -59,7 +102,7 @@ class GW_Instek(osciloscopio):
         time = float(time_1_buff)
         print("Base de tiempo: ",time)
 
-        self.write(':ACQ%s:MEM?'%valor)
+        self.write(':ACQ%s:MEM?'%canal)
         memoria_canal = self.read_bytes(8014, break_term=True)
         print("Leidos %d datos"%len(memoria_canal))
         
@@ -115,8 +158,12 @@ class GW_Instek(osciloscopio):
     
         return v
 
-        
+    
+#------------------------------------------------------------------------------
+#------------------------- Tektronix_DSO_DPO_MSO_TDS --------------------------
+#------------------------------------------------------------------------------
 
+   
 class Tektronix_DSO_DPO_MSO_TDS(Instrument):
     """ clase del tektronix DPO7000, MSO/DPO70000, MSO2000B / DPO2000B, MSO3000 
     / DPO3000, MSO4000 / DPO4000, MSO5000 / DPO5000, TDS2000C, TDS3000, MDO3000
@@ -124,8 +171,11 @@ class Tektronix_DSO_DPO_MSO_TDS(Instrument):
     
     ## comandos del vertical CH1
     SET_CH1_VDIV="CH1:SCA {}"
+    SET_CH2_VDIV="CH1:SCA {}"
     SET_CH1_COUPLE=""
+
     GET_CH1_VDIV="CH1:SCA?"
+    GET_CH2_VDIV="CH1:SCA?"
     GET_CH1_COUPLE=""
     
     ## comandos de la base de tiempo
@@ -137,17 +187,23 @@ class Tektronix_DSO_DPO_MSO_TDS(Instrument):
     def __init__(self,handler):
         super().__init__(handler)
         
-    def set_ch1_DIV(self,valor):
-        self.write(self.SET_CH1_VDIV.format(valor))
-
-    def get_ch1_DIV(self):
-        """ Retorna string del factor de division vertical del canal 1"""
-        return self.query(self.GET_CH1_VDIV)
+    def set_chan_DIV(self,valor,canal):
+	if canal == 1: 
+		self.write(self.SET_CH1_VDIV.format(valor))
+	else:
+		self.write(self.SET_CH2_VDIV.format(valor))
+    
+    def get_chan_DIV(self, canal):
+        """ Retorna string del factor de division vertical del canal"""
+	if canal == 1: 
+	        return self.query(self.GET_CH1_VDIV)
+	else
+	        return self.query(self.GET_CH2_VDIV)
         
-    def get_trace(self,valor):
+    def get_trace(self,canal,VERBOSE = 1):
         """retorna una tupla (tiempo,tension) """
         
-        self.write('DATA:SOU CH{}'.format(valor))
+        self.write('DATA:SOU CH{}'.format(canal))
         self.write('DATA:WIDTH 1')
         self.write('DATA:ENC RPB')
         
@@ -173,13 +229,18 @@ class Tektronix_DSO_DPO_MSO_TDS(Instrument):
         return Time[0:aux],Volts[0:aux]
 
 
-    
+#------------------------------------------------------------------------------
+#------------------------- RIGOL ----------------------------------------------
+#------------------------------------------------------------------------------
+
 
 class rigol(Instrument):
     SET_CH1_VDIV=":CHAN1:SCAL {}"
-    SET_CH1_COUPLE="" #no implementado
+    SET_CH2_VDIV=":CHAN2:SCAL {}"
+
     GET_CH1_VDIV=":CHAN1:SCAL?" 
-    GET_CH1_COUPLE=""#no implementado
+    GET_CH2_VDIV=":CHAN2:SCAL?" 
+
     
     ## comandos de la base de tiempo
     SET_BT=""#no implementado
@@ -188,14 +249,20 @@ class rigol(Instrument):
     def __init__(self,handler):
         super().__init__(handler)
         
-    def set_ch1_DIV(self,valor):
-        self.write(self.SET_CH1_VDIV.format(valor))
+    def set_chan_DIV(self,valor,canal):
+	if canal == 1: 
+		self.write(self.SET_CH1_VDIV.format(valor))
+	else:
+		self.write(self.SET_CH2_VDIV.format(valor))
     
-    def get_ch1_DIV(self):
-        """ Retorna string del factor de division vertical del canal 1"""
-        return self.query(self.GET_CH1_VDIV)
+    def get_chan_DIV(self, canal):
+        """ Retorna string del factor de division vertical del canal"""
+	if canal == 1: 
+	        return self.query(self.GET_CH1_VDIV)
+	else
+	        return self.query(self.GET_CH2_VDIV)
         
-    def get_trace(self,canal):
+    def get_trace(self,canal,VERBOSE = 1):
         """retorna una tupla (tiempo,tension) del canal especificado """
         canal=str(canal)
         self.write(":STOP")
@@ -214,7 +281,8 @@ class rigol(Instrument):
         rawdata = self.read_raw()[10:]
         data_size = len(rawdata)
         sample_rate = float(self.query(':ACQ:SAMP?'))
-        print ('Data size:', data_size, "Sample rate:", sample_rate)
+	if VERBOSE:
+		print ('Data size:', data_size, "Sample rate:", sample_rate)
         self.write(":KEY:FORCE")
         
         data = np.frombuffer(rawdata, 'B')
@@ -235,9 +303,3 @@ class rigol(Instrument):
         return time,data
         
 
-
-class Insteck(Instrument):
-    pass
-
-class Agilent(Instrument):
-    pass

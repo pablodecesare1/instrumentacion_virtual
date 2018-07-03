@@ -2,23 +2,31 @@
 """
 Created on Thu May 17 09:39:36 2018
 
-@author: Pablo
+@author: Pablo, Ramiro
+
 """
 
 class Instrument:
-    '''
-    Represents each generic instrument of either control or measurement
 
     '''
-    COMMAND_ID = "ID?;"
-    COMMAND_COMM_ADDRESS = ""
-
-# ============================================================================
-# ============================================================================
+    Representa tanto un instrumento de medición como de control.
+    Esta clase debe contener solo la implementación de funciones VISA básicas.
+    '''
 
     def __init__(self, visa_instrument_handle):
 
+	# Variables o definiciones de la clase
+	COMMAND_ID = "*IDN?"#"ID?;"
+	COMMAND_COMM_ADDRESS = ""
+
         self.instrument_handle = visa_instrument_handle
+
+	# Hacemos un query del ID y lo guardamos
+	INSTR_ID = self.query(COMMAND_ID)
+
+    def print_ID(self):
+	print(INSTR_ID)
+	
 
     def write(self, command_string):
         """ Implement visa write command """
@@ -36,11 +44,11 @@ class Instrument:
         return self.instrument_handle.read()
     
     def read_raw(self):
-        """ Implement visa read command """
+        """ Implement visa read raw command """
         
         return self.instrument_handle.read_raw()
     
     def read_bytes(self, bytes_read, break_term=True):
-        """ Implement visa read command """
+        """ Implement visa read bytes command """
         
         return self.instrument_handle.read_bytes(bytes_read , break_on_termchar=break_term)
