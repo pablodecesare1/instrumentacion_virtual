@@ -15,17 +15,16 @@ class Instrument:
 
     def __init__(self, visa_instrument_handle):
 
-	# Variables o definiciones de la clase
-	COMMAND_ID = "*IDN?"#"ID?;"
-	COMMAND_COMM_ADDRESS = ""
-
+        # Variables o definiciones de la clase
+        self.COMMAND_ID = "*IDN?"#"ID?;"
+        self.COMMAND_COMM_ADDRESS = ""
         self.instrument_handle = visa_instrument_handle
-
-	# Hacemos un query del ID y lo guardamos
-	INSTR_ID = self.query(COMMAND_ID)
+        
+        # Hacemos un query del ID y lo guardamos
+        self.INSTR_ID = self.query(self.COMMAND_ID)
 
     def print_ID(self):
-	print(INSTR_ID)
+    	print(self.INSTR_ID)
 	
 
     def write(self, command_string):

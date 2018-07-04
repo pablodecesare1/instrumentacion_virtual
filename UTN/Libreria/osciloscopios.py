@@ -24,28 +24,28 @@ from struct import unpack
 
 class osciloscopio(Instrument):
     
-	def __init__(self,handler):
+    def __init__(self,handler):
 
-		## comandos del vertical CH1
-		SET_CH1_VDIV=""
-		SET_CH1_COUPLE=""
-		GET_CH1_VDIV=""
-		GET_CH1_COUPLE=""
+        # comandos del vertical CH1
+        SET_CH1_VDIV=""
+        SET_CH1_COUPLE=""
+        GET_CH1_VDIV=""
+        GET_CH1_COUPLE=""
 
-		## comandos de la base de tiempo
-		SET_BT=""
-		GET_BT=""
+        ## comandos de la base de tiempo
+        SET_BT=""
+        GET_BT=""
 
-		super().__init__(handler)
+        super().__init__(handler)
 
-	def set_chan_DIV(self,valor,canal):
-		pass
+    def set_chan_DIV(self,valor,canal):
+        pass
 
-	def get_chan_DIV(self, canal):
-		pass
+    def get_chan_DIV(self, canal):
+        pass
         
-    	def get_trace(self,canal, VERBOSE = 1)
-		pass
+    def get_trace(self,canal, VERBOSE = 1):
+        pass
 
 
 
@@ -69,17 +69,17 @@ class GW_Instek(osciloscopio):
     
 
     def set_chan_DIV(self,valor,canal):
-	if canal == 1: 
-		self.write(self.SET_CH1_VDIV.format(valor))
-	else:
-		self.write(self.SET_CH2_VDIV.format(valor))
+        if canal == 1: 
+            self.write(self.SET_CH1_VDIV.format(valor))
+        else:
+            self.write(self.SET_CH2_VDIV.format(valor))
     
     def get_chan_DIV(self, canal):
         """ Retorna string del factor de division vertical del canal"""
-	if canal == 1: 
-	        return self.query(self.GET_CH1_VDIV)
-	else
-	        return self.query(self.GET_CH2_VDIV)
+        if canal == 1: 
+            return self.query(self.GET_CH1_VDIV)
+        else:
+            return self.query(self.GET_CH2_VDIV)
 
     def get_trace(self,canal, VERBOSE = 1):
         
@@ -101,7 +101,7 @@ class GW_Instek(osciloscopio):
         time_1_buff = self.read_raw();
         time = float(time_1_buff)
         print("Base de tiempo: ",time)
-
+        
         self.write(':ACQ%s:MEM?'%canal)
         memoria_canal = self.read_bytes(8014, break_term=True)
         print("Leidos %d datos"%len(memoria_canal))
@@ -120,42 +120,42 @@ class GW_Instek(osciloscopio):
         # un char (int 8 bits) litle-endian
         h  = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=0)
         f  = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=1)
-    
+        
         # Leemos el resto del header, tamaño de los datos
         nn  = np.frombuffer(memoria_canal, dtype=np.int8, count=4, offset=2)
-    
+        
         # Leemos la base de tiempo
         tb = np.frombuffer(memoria_canal, dtype=np.uint8, count=4, offset=6) 
         # Viene en big-endian (IEEE 754), convertimos a little-endian (revertimos el orden de los bytes)
         t = tb.newbyteorder()
-    
+        
         # Leemos el numero de canal del que proviene (dado antes por "ACQ#:")
         ch = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=10)
-    
+        
         # Sacamos del buffer los 3 bytes reservados
         r = np.frombuffer(memoria_canal, dtype=np.int8, count=3, offset=11)
         
         if VERBOSE:
             print("Header decodificado:")
             print(str(chr(h)), str(chr(f)), str(chr(nn[0])), str(chr(nn[1])), str(chr(nn[2])), str(chr(nn[3])), t, ch)
-    
+
         # Ahora convertimos los valores del ADC a volts
         #   is ADCgain the ADC mapping of 10 volts range onto 256 8-bit values
         #   ... or is it really just a magic constant of 1/25?
         ADCgain = 10.0/250;  #todo: why not 256?  data matches for 1/25
-    
+        
         # Leemos 4000 cuentas crudas del ADC
         # Valores de 16 bits signados, pero el LSB es siempre 0, siendo realmente
         # valores de 8 bits
         memoria_np_canal = np.frombuffer(memoria_canal, dtype=np.int16, count=muestras, offset=14)
         memoria_np_canal = memoria_np_canal/(2**8)
-    
+        
         v = offset + memoria_np_canal*scale*ADCgain;
     
         if VERBOSE:
             print(memoria_np_canal.shape)
             print(memoria_np_canal)
-    
+
         return v
 
     
@@ -173,7 +173,7 @@ class Tektronix_DSO_DPO_MSO_TDS(Instrument):
     SET_CH1_VDIV="CH1:SCA {}"
     SET_CH2_VDIV="CH1:SCA {}"
     SET_CH1_COUPLE=""
-
+    
     GET_CH1_VDIV="CH1:SCA?"
     GET_CH2_VDIV="CH1:SCA?"
     GET_CH1_COUPLE=""
@@ -188,17 +188,17 @@ class Tektronix_DSO_DPO_MSO_TDS(Instrument):
         super().__init__(handler)
         
     def set_chan_DIV(self,valor,canal):
-	if canal == 1: 
-		self.write(self.SET_CH1_VDIV.format(valor))
-	else:
-		self.write(self.SET_CH2_VDIV.format(valor))
+        if canal == 1: 
+            self.write(self.SET_CH1_VDIV.format(valor))
+        else:
+            self.write(self.SET_CH2_VDIV.format(valor))
     
     def get_chan_DIV(self, canal):
         """ Retorna string del factor de division vertical del canal"""
-	if canal == 1: 
-	        return self.query(self.GET_CH1_VDIV)
-	else
-	        return self.query(self.GET_CH2_VDIV)
+        if canal == 1: 
+            return self.query(self.GET_CH1_VDIV)
+        else:
+            return self.query(self.GET_CH2_VDIV)
         
     def get_trace(self,canal,VERBOSE = 1):
         """retorna una tupla (tiempo,tension) """
@@ -250,17 +250,17 @@ class rigol(Instrument):
         super().__init__(handler)
         
     def set_chan_DIV(self,valor,canal):
-	if canal == 1: 
-		self.write(self.SET_CH1_VDIV.format(valor))
-	else:
-		self.write(self.SET_CH2_VDIV.format(valor))
+        if canal == 1: 
+            self.write(self.SET_CH1_VDIV.format(valor))
+        else:
+            self.write(self.SET_CH2_VDIV.format(valor))
     
     def get_chan_DIV(self, canal):
         """ Retorna string del factor de division vertical del canal"""
-	if canal == 1: 
-	        return self.query(self.GET_CH1_VDIV)
-	else
-	        return self.query(self.GET_CH2_VDIV)
+        if canal == 1: 
+            return self.query(self.GET_CH1_VDIV)
+        else:
+            return self.query(self.GET_CH2_VDIV)
         
     def get_trace(self,canal,VERBOSE = 1):
         """retorna una tupla (tiempo,tension) del canal especificado """
@@ -281,8 +281,8 @@ class rigol(Instrument):
         rawdata = self.read_raw()[10:]
         data_size = len(rawdata)
         sample_rate = float(self.query(':ACQ:SAMP?'))
-	if VERBOSE:
-		print ('Data size:', data_size, "Sample rate:", sample_rate)
+        if VERBOSE:
+            print ('Data size:', data_size, "Sample rate:", sample_rate)
         self.write(":KEY:FORCE")
         
         data = np.frombuffer(rawdata, 'B')

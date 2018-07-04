@@ -13,9 +13,10 @@ modos.
 """
 
 import numpy as np
+import mediciones
 
 
-class Operador(Mediciones):
+class Operador(mediciones.Mediciones):
     
 	def __init__(self,inst,operador):
 		# nombre del equipo dado por el usuario

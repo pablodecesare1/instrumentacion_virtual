@@ -11,9 +11,11 @@ import pyvisa as visa
 import matplotlib.pyplot as plt
 # Agreamos el path de las librerias
 import sys
-sys.path.insert(0, 'Librerias')
+sys.path.insert(0, 'Libreria')
 # Traemos todos los osciloscopios
 from osciloscopios import GW_Instek, rigol, Tektronix_DSO_DPO_MSO_TDS
+# Traemos el operador
+import operador
 
 # Definimos una funcion para poder ejecutar un mensaje de error
 def excepthook(type, value, traceback):
@@ -44,7 +46,7 @@ else:
 
 
 # Informamos el modelo del osciloscopio conectado
-print("Esta conectado un {}".format(MiOsciloscopio.print_ID))
+print("Esta conectado un %s"%MiOsciloscopio.INSTR_ID)
 
 
 # Pedimos el trazo de cada canal, la salida es en ([seg.],[volt])
@@ -56,9 +58,9 @@ plt.plot(tiempo1,tension1,tiempo2,tension2)
 
 
 # Generamos un operador y pedimos el valor RMS actual
-operador_1 = Operador(MiOsciloscopio,"Workbench_I")
+operador_1 = operador.Operador(MiOsciloscopio,"Workbench_I")
 
-val_RMS = medir_Vrms(canal = 1, VERBOSE = True)
+val_RMS = operador_1.medir_Vrms(canal = 1, VERBOSE = True)
 
 print('Vrms = %0.5f'%val_RMS)
 
