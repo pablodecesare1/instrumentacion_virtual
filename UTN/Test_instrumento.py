@@ -5,6 +5,7 @@
 
 # Traemos la libreria VISA
 import pyvisa as visa
+
 # Agreamos el path de las librerias
 import sys
 sys.path.insert(0, 'Libreria')
@@ -15,7 +16,7 @@ from instrument import Instrument
 
 
 # Pedimos la lista de instrumentos
-rm=visa.ResourceManager()
+rm=visa.ResourceManager('@py')
 print(rm.list_resources())
 
 # Abrimos un instrumento
