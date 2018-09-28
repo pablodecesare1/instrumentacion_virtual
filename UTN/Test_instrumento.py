@@ -19,15 +19,16 @@ from instrument import Instrument
 rm=visa.ResourceManager('@py')
 print(rm.list_resources())
 
-# Abrimos un instrumento
-INTRUMENT_INDEX = 0
-instrument_handler=rm.open_resource(rm.list_resources()[INTRUMENT_INDEX])
 
-# Implementamos la clase instrumento base
-instrumento = Instrument(instrument_handler)
+for resource_obj in rm.list_resources():
+	# Abrimos un instrumento
+	instrument_handler=rm.open_resource(resource_obj)
 
-# Imprimimos el ID el instrumento
-print("Esta conectado un: ")
-instrumento.print_ID()
+	# Implementamos la clase instrumento base
+	instrumento = Instrument(instrument_handler)
+
+	# Imprimimos el ID el instrumento
+	print("Conectado un: ")
+	instrumento.print_ID()
 
 

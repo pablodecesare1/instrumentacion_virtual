@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 # Agreamos el path de las librerias
 import sys
 sys.path.insert(0, 'Libreria')
+import platform
 # Traemos todos los osciloscopios
 from osciloscopios import GW_Instek, rigol, Tektronix_DSO_DPO_MSO_TDS
 # Traemos el operador
@@ -26,14 +27,23 @@ sys.excepthook = excepthook
 
 
 # Seteamos el tipo de osciloscio a utilizar
-OSCILOSCOPIOS = 0	# 0: GW_Instek
+OSCILOSCOPIOS = 2	# 0: GW_Instek
 			# 1: rigol
 			# 2: Tektronix_DSO_DPO_MSO_TDS
 
+USE_DEVICE = 1
 
 # Abrimos el instrumento
-rm=visa.ResourceManager()
-instrument_handler=rm.open_resource(rm.list_resources()[0])
+platforma = platform.platform();
+print(platforma)
+if 'pyvisa' in sys.modules:
+	rm=visa.ResourceManager('@py')
+elif 'visa' in sys.modules:
+	rm=visa.ResourceManager('@ni')
+else:
+	error()
+
+instrument_handler=rm.open_resource(rm.list_resources()[USE_DEVICE])
 
 if OSCILOSCOPIOS == 0:
 	MiOsciloscopio = GW_Instek(instrument_handler)
@@ -55,6 +65,7 @@ tiempo2,tension2=MiOsciloscopio.get_trace("2")
 
 # Ploteamos los canales
 plt.plot(tiempo1,tension1,tiempo2,tension2)
+plt.show()
 
 
 # Generamos un operador y pedimos el valor RMS actual
