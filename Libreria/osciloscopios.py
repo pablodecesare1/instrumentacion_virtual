@@ -38,11 +38,39 @@ class osciloscopio(Instrument):
 
         super().__init__(handler)
 
+    # ---- Canal Vertical
     def set_chan_DIV(self,valor,canal):
         pass
-
     def get_chan_DIV(self, canal):
         pass
+    
+    # ---- Canal Horizontal
+    def set_BT(self,tiempo_div):
+        pass
+    def get_BT(self):
+        pass
+
+    # ---- Trigger
+    # Setear
+    def set_triggerLevel(self,valor):
+        pass
+    def set_triggerSource(self,canal):
+        pass
+    def set_triggerSlope(self,valor):
+        pass
+    def set_triggerType(self,tipo):
+        pass
+    # Consultar
+    def get_triggerLevel(self):
+        pass
+    def get_triggerSource(self):
+        pass
+    def get_triggerSlope(self):
+        pass
+    def get_triggerType(self):
+        pass
+
+    
         
     def get_trace(self,canal, VERBOSE = 1):
         pass
