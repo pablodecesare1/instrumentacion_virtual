@@ -16,7 +16,7 @@ from instrument import Instrument
 
 
 # Pedimos la lista de instrumentos
-rm=visa.ResourceManager('@py')
+rm=visa.ResourceManager('@ni')
 print(rm.list_resources())
 
 
