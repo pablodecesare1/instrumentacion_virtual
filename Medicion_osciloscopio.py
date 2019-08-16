@@ -27,19 +27,21 @@ sys.excepthook = excepthook
 
 
 # Seteamos el tipo de osciloscio a utilizar
-OSCILOSCOPIOS = 2	# 0: GW_Instek
+OSCILOSCOPIOS = 0	# 0: GW_Instek
 			# 1: rigol
 			# 2: Tektronix_DSO_DPO_MSO_TDS
 
-USE_DEVICE = 1
+USE_DEVICE = 0
 
 # Abrimos el instrumento
-platforma = platform.platform();
+platforma = platform.platform()
 print(platforma)
 if 'pyvisa' in sys.modules:
 	rm=visa.ResourceManager('@py')
+	print('pyvisa')
 elif 'visa' in sys.modules:
 	rm=visa.ResourceManager('@ni')
+	print('visa')
 else:
 	error()
 

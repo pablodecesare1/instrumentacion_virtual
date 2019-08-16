@@ -135,7 +135,8 @@ class GW_Instek(osciloscopio):
         print("Leidos %d datos"%len(memoria_canal))
         
         tension_volt = self.Parsear_canal(memoria_canal, offset, scale, 2000, VERBOSE)
-        tiempo_seg = np.arange(0,len(tension_volt),1)*time
+        #tiempo_seg = np.arange(0,len(tension_volt),1)*time
+        tiempo_seg = np.linspace(0,time*8,len(tension_volt)) # 8 porque observamos eso, CHECKEAR
             
         return tiempo_seg, tension_volt
     

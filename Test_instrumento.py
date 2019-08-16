@@ -11,18 +11,31 @@ import sys
 sys.path.insert(0, 'Libreria')
 # Traemos la clase base que implmenta las funciones de VISA
 from instrument import Instrument
+import platform
 
 
 
 
 # Pedimos la lista de instrumentos
-rm=visa.ResourceManager('@py')
+platforma = platform.platform()
+print(platforma)
+if 'pyvisa' in sys.modules:
+	rm=visa.ResourceManager('@py')
+	print('pyvisa')
+elif 'visa' in sys.modules:
+	rm=visa.ResourceManager('@ni')
+	print('visa')
+else:
+	error()
 print(rm.list_resources())
 
 
 for resource_obj in rm.list_resources():
 	# Abrimos un instrumento
 	instrument_handler=rm.open_resource(resource_obj)
+
+	print('Handler:')
+	print(instrument_handler)
 
 	# Implementamos la clase instrumento base
 	instrumento = Instrument(instrument_handler)
