@@ -2,7 +2,7 @@
 """
 Created on Thu May 17 09:35:12 2018
 
-@author: Pablo, Ramiro
+@author: Pablo, Ramiro, Juan Balbi, Joglar Matias, Niro Bruno
 
 
 Este módulo contiene las distintas implementaciones de los osciloscopios.
@@ -61,7 +61,7 @@ class osciloscopio(Instrument):
     def set_triggerType(self,tipo):
         pass
     # Consultar
-    def get_triggerLevel(self):
+    def get_triggerLevel(self,channel=''):
         pass
     def get_triggerSource(self):
         pass
@@ -76,6 +76,100 @@ class osciloscopio(Instrument):
         pass
 
 
+#------------------------------------------------------------------------------
+#------------------------- MSO-X 3024A Keysight ------------------------------------------
+#------------------------------------------------------------------------------
+
+class MSO_3024A (osciloscopio):
+    def __init__(self,handler):
+        super().__init__(handler)
+        
+        self.SET_CH1_VDIV="CHAN1:SCAL {}"
+        self.SET_CH2_VDIV="CHAN2:SCAL {}"
+        self.SET_CH3_VDIV="CHAN3:SCAL {}"
+        self.SET_CH4_VDIV="CHAN4:SCAL {}"
+        
+        self.GET_CH1_VDIV="CHAN1:SCAL?"
+        self.GET_CH2_VDIV="CHAN2:SCAL?"
+        self.GET_CH3_VDIV="CHAN3:SCAL?"
+        self.GET_CH4_VDIV="CHAN4:SCAL?"
+        
+        
+        self.read_termination = '\r'
+        
+         # ---- Canal Vertical
+    def set_chan_DIV(self,valor,canal):
+
+        if canal == 1: 
+            self.write(self.SET_CH1_VDIV.format(valor))
+        
+        if canal == 2: 
+            self.write(self.SET_CH2_VDIV.format(valor))
+        
+        if canal == 3: 
+            self.write(self.SET_CH3_VDIV.format(valor))
+        
+        if canal == 4: 
+            self.write(self.SET_CH4_VDIV.format(valor))
+        
+    def get_chan_DIV(self, canal):
+        if canal == 1: 
+            return self.query(self.GET_CH1_VDIV)
+        
+        if canal == 2: 
+            return self.query(self.GET_CH2_VDIV)
+        
+        if canal == 3: 
+            return self.query(self.GET_CH3_VDIV)
+        
+        if canal == 4: 
+            return self.query(self.GET_CH4_VDIV)
+        
+    
+    # ---- Canal Horizontal
+    def set_BT(self,tiempo_div):
+        self.write("TIM:SCAL "+str(tiempo_div))
+        
+    def get_BT(self):
+       return self.query("TIM:SCAL?")
+        
+    # ---- Trigger
+    # Setear
+    def set_triggerLevel(self,valor,channel):
+        self.write("TRIG:LEV " + str(valor)+", CHAN" + str(channel))
+    
+    def set_triggerSlope(self,valor):
+        self.write("TRIG:SLOP "+valor)
+    def set_triggerType(self,tipo):
+        self.write("TRIG:MODE "+tipo)
+    # Consultar
+    def get_triggerLevel(self,channel):
+        return self.query("TRIG:LEV? CHAN" + str(channel))
+        
+        
+    def get_triggerSlope(self):
+        return self.query("TRIG:SLOP?")
+        
+    def get_triggerType(self):
+        return self.query("TRIG:MODE?")
+        
+    
+        
+    def get_trace(self,canal, VERBOSE = 1):
+        self.write("WAV:FORM ASCii")
+        self.write("WAV:UNS OFF")
+        self.write("WAV:BYT LSBF")
+        self.write("WAV:SOUR CHAN"+str(canal))
+        sample_rate = int(self.query("ACQ:SRAT?"))
+        self.write("WAV:DATA?")
+
+        data = self.read_raw()
+        data = data[10:len(data)-2].decode("utf-8")
+        data = np.array(data.split(','),dtype=np.float32)
+        time = np.linspace(0,len(data)/sample_rate,len(data))
+        return time,data
+        
+        #return(time,volt)
 
 #------------------------------------------------------------------------------
 #------------------------- GW_Instek ------------------------------------------
