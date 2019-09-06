@@ -63,4 +63,5 @@ MiGenArb.arb_signal(chirp, amp_scale = 1)
 plt.plot(t,chirp)
 plt.show()
 
+MiGenArb.close()
 

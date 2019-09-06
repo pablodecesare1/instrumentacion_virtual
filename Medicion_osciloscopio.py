@@ -78,6 +78,9 @@ val_RMS = operador_1.medir_Vrms(canal = 1, VERBOSE = True)
 print('Vrms = %0.5f'%val_RMS)
 
 
+MiOsciloscopio.close()
+
+
 
 
 

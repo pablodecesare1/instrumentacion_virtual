@@ -43,5 +43,7 @@ for resource_obj in rm.list_resources():
 	# Imprimimos el ID el instrumento
 	print("Conectado un: ")
 	instrumento.print_ID()
+    
+	instrumento.close()
 
 

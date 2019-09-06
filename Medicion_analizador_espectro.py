@@ -57,3 +57,9 @@ miAnalizadorDeEspectro.set_referencelevel(-50)
 miAnalizadorDeEspectro.set_marker_delta(2)
 #miAnalizadorDeEspectro.set_marker_reference_level(2)
 miAnalizadorDeEspectro.set_marker_freq(2,22000000)
+
+
+
+
+
+MiOsciloscopio.close()

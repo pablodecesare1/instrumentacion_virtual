@@ -22,6 +22,11 @@ class Instrument:
         
         # Hacemos un query del ID y lo guardamos
         self.INSTR_ID = self.query(self.COMMAND_ID)
+        
+    def close(self):
+        self.instrument_handle.before_close()
+        self.instrument_handle.clear()
+        self.instrument_handle.close()
 
     def print_ID(self):
     	print(self.INSTR_ID)
