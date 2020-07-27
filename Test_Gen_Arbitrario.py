@@ -53,15 +53,15 @@ plt.plot(t,prueba)
 plt.show()
 
 # Creamos una señal aleatoria en numpy
-muestras = 10000
-MiGenArb.sampleRate = 100000
-t = np.linspace(0,muestras*1/MiGenArb.sampleRate,muestras)
-chirp = signal.chirp(t, 1e3, t[int(np.floor(muestras/2))], 2e3)
-MiGenArb.arb_signal(chirp, amp_scale = 1)
+# muestras = 10000
+# MiGenArb.sampleRate = 100000
+# t = np.linspace(0,muestras*1/MiGenArb.sampleRate,muestras)
+# chirp = signal.chirp(t, 1e3, t[int(np.floor(muestras/2))], 2e3)
+# MiGenArb.arb_signal(chirp, amp_scale = 1)
 
 # Mostramos la señal
-plt.plot(t,chirp)
-plt.show()
+# plt.plot(t,chirp)
+# plt.show()
 
 MiGenArb.close()
 
