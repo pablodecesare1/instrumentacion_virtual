@@ -78,7 +78,9 @@ class Agilent33512A(generador_arbitrario):
             use_scale = str(self.amp)
         self.write("SOURCE1:VOLT {}".format(use_scale))
 
-    def setOffset(self):
+    def setOffset(self, new_offset=None):
+        if new_offset != None:
+            self.offset = new_offset
         self.write("SOURCE1:VOLT:OFFSET {}".format(str(self.offset)))
 
     def setMaxOutputImpedance(self):
@@ -168,3 +170,10 @@ class Agilent33512A(generador_arbitrario):
         self.encenderCanal(0)
 
         return (t, prueba_np)
+    
+    def continua(self,amp=1):
+        # Seteamos en DC
+        self.write("SOURce1:FUNCtion DC")
+        # Seteamos el valor de salida
+        self.setOffset(amp)
+        
