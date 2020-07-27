@@ -16,7 +16,7 @@ import numpy as np
 import mediciones
 
 
-class Operador(mediciones.Mediciones):
+class Operador_osciloscopio(mediciones.Mediciones):
     
 	def __init__(self,inst,operador):
 		# nombre del equipo dado por el usuario
@@ -34,5 +34,28 @@ class Operador(mediciones.Mediciones):
 		tiempo,tension = self.instrument.get_trace(canal, VERBOSE)
 
 		return self.Vrms(tiempo,tension)
+    
+	def medir_detaF(self, canal = 1, VERBOSE = False):
+		pass
+
+	def medir_indiceMod(self, canal = 1, VERBOSE = False):
+		pass
+
+	def get_espectro(self, canal = 1, ventan='uniforme', VERBOSE = False):
+		# devolver eje en frecuencia
+		pass
 
 
+class Operador_generador(mediciones.Mediciones):
+    
+	def __init__(self,inst,operador):
+		# nombre del equipo dado por el usuario
+		self.operador	= operador
+		# Clase de instrumento
+		self.instrument	= inst
+
+	def generar_FM(self, fc, fm, deltaF, cant_muestras, offset, sample_rate=100000):
+		pass
+
+	def generar_AM(self, fc, fm, M, cant_muestras, offset, sample_rate=100000):
+		pass

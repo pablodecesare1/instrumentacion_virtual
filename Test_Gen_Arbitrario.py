@@ -11,10 +11,10 @@ import pyvisa as visa
 import matplotlib.pyplot as plt
 # Agreamos el path de las librerias
 import sys
-sys.path.insert(0, 'Libreria')
+sys.path.insert(0, 'InstVirtualLib')
 import platform
 # Traemos el generador
-from generadores_arbitrarios import Agilent33512A
+from InstVirtualLib.generadores_arbitrarios import Agilent33512A
 # Siempre util numpy y scipy...
 import numpy as np
 from scipy import signal

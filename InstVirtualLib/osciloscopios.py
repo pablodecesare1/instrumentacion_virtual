@@ -36,6 +36,10 @@ class osciloscopio(Instrument):
         SET_BT=""
         GET_BT=""
 
+        ## comandos de Vertical
+        SET_COUPLING=""
+        GET_COUPLING=""
+
         super().__init__(handler)
 
     # ---- Canal Vertical
@@ -366,12 +370,30 @@ class rigol(Instrument):
 
     
     ## comandos de la base de tiempo
-    SET_BT=""#no implementado
-    GET_BT=""#no implementado
+    SET_BT=":TIM:SCAL {}"
+    GET_BT=":TIM:SCAL?"
+
+    ## comandos de Vertical
+    SET_COUPLING=":CHANnel{0:d}:COUPling {1:}"
+    GET_COUPLING=":CHANnel{0:d}:COUPling?"
+
+
+
     
     def __init__(self,handler):
         super().__init__(handler)
         
+    # ---- Canal Horizontal
+    def set_ACOPLE(self,canal,tipo):
+        self.write(self.SET_COUPLING.format(canal,tipo))
+    def get_ACOPLE(self,canal):
+        return self.query(self.GET_COUPLING.format(canal))
+    
+    def set_BT(self,tiempo_div):
+        self.write(self.SET_BT.format(tiempo_div))
+    def get_BT(self):
+        return self.query(self.GET_BT)
+
     def set_chan_DIV(self,valor,canal):
         if canal == 1: 
             self.write(self.SET_CH1_VDIV.format(valor))
@@ -422,6 +444,8 @@ class rigol(Instrument):
 
 # Now, generate a time axis.
         time = np.linspace(0,len(data)/sample_rate, num=len(data))
+
+        self.write(":RUN")
  
         return time,data
         

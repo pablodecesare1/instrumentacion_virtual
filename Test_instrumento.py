@@ -8,12 +8,10 @@ import pyvisa as visa
 
 # Agreamos el path de las librerias
 import sys
-sys.path.insert(0, 'Libreria')
+sys.path.insert(0, 'InstVirtualLib')
 # Traemos la clase base que implmenta las funciones de VISA
-from instrument import Instrument
+from InstVirtualLib import instrument as Instrument
 import platform
-
-
 
 
 # Pedimos la lista de instrumentos

@@ -4,9 +4,9 @@ import pyvisa as visa
 import matplotlib.pyplot as plt
 # Agreamos el path de las librerias
 import sys
-sys.path.insert(0, 'Libreria')
-from instrument import Instrument
-from analizador_espectro import Rigol_DSA800
+sys.path.insert(0, 'InstVirtualLib')
+from InstVirtualLib import instrument as Instrument
+from InstVirtualLib.analizador_espectro import Rigol_DSA800
 import numpy as np
 # Definimos una funcion para poder ejecutar un mensaje de error
 def excepthook(type, value, traceback):

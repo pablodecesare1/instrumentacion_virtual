@@ -11,10 +11,12 @@ import pyvisa as visa
 import matplotlib.pyplot as plt
 # Agreamos el path de las librerias
 import sys
-sys.path.insert(0, 'Libreria')
+sys.path.insert(0, 'InstVirtualLib')
 import platform
 # Traemos todos los osciloscopios
-from osciloscopios import GW_Instek, rigol, Tektronix_DSO_DPO_MSO_TDS
+from InstVirtualLib.osciloscopios import GW_Instek
+from InstVirtualLib.osciloscopios import rigol
+from InstVirtualLib.osciloscopios import Tektronix_DSO_DPO_MSO_TDS
 # Traemos el operador
 import operador
 
