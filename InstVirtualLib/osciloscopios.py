@@ -18,6 +18,9 @@ from instrument import Instrument
 import numpy as np
 from struct import unpack
 
+import time as time_lib
+
+
 #------------------------------------------------------------------------------
 #------------------------- BASE CLASS -----------------------------------------
 #------------------------------------------------------------------------------
@@ -407,11 +410,59 @@ class rigol(Instrument):
         else:
             return self.query(self.GET_CH2_VDIV)
         
-    def get_trace(self,canal,VERBOSE = 1):
+    def get_trace(self,canal, sleep_time=2.0, ADQ_MODE='RAW', ADQ_STATE = 'RUN', ADQ_MEM_LENG = 'LONG', RETRIES= 3, VERBOSE = 1):
         """retorna una tupla (tiempo,tension) del canal especificado """
         canal=str(canal)
-        self.write(":STOP")
- 
+        
+        # Estado de canala matematico
+        MATH_STATE = self.query(':MATH:DISPlay?')
+        
+        # Calculamos el tamaño esperado
+        # Los valores NO son los mismos del manual, fueron adaptados segun ensayo.
+        if ADQ_MODE == 'NORMAL' or MATH_STATE=='ON' or ADQ_STATE=='RUN': # El manual esta mal, si esta en RUN son siempre 600
+            EXPECTED_SIZE = 600
+        elif ADQ_MODE == 'RAW':
+            if ADQ_MEM_LENG == 'NORM':
+                EXPECTED_SIZE = 16384
+            else:
+                EXPECTED_SIZE = 1048566
+        elif ADQ_MODE == 'MAX':
+            if ADQ_MEM_LENG == 'NORM' and ADQ_STATE == 'STOP':
+                EXPECTED_SIZE = 16384
+            if ADQ_MEM_LENG == 'LONG' and ADQ_STATE == 'STOP':
+                EXPECTED_SIZE = 1048566
+            elif ADQ_STATE == 'RUN':
+                EXPECTED_SIZE = 600
+        
+        # Sanity check de los parametros...
+        if not ADQ_STATE in ['RUN','STOP']:
+            print('Estado de adquisicion invalido (RUN/STOP)')
+            return
+        
+        if not ADQ_MODE in ['RAW','MAX', 'NORMAL']:
+            print('Modo de adquisicion invalido (RAW/MAX/NORMAL)')
+            return
+        
+        if not ADQ_MEM_LENG in ['NORM', 'LONG']:
+            print('Profundidad de memoria invalida (NORM/LONG)')
+            return
+            
+        # Seteamos al modo elegido (RUN o STOP) ver manual pagina  2-69
+        self.write(":%s"%ADQ_STATE)
+        time_lib.sleep(sleep_time)
+        
+        # Seteamos el largo de memoria
+        self.write(":ACQ:MEMD %s"%ADQ_MEM_LENG) 
+        # Modo de adquisicion
+        self.write(":WAV:POIN:MODE %s"%ADQ_MODE)
+        # Modo tiempo real
+        self.write(":ACQ:MODE REAL_TIME") 
+        
+        print(self.query(":ACQ:MEMD?"))
+        print('adquisition mode: %s'%self.query(':WAVeform:POINts:MODE?'))
+        
+
+        
         # Get the timescale
         timescale = float(self.query(":TIM:SCAL?"))
         # Get the timescale offset
@@ -421,13 +472,40 @@ class rigol(Instrument):
         # And the voltage offset
         voltoffset = float(self.query(":CHAN{}:OFFS?".format(canal)))
 
-        self.write(":WAV:POIN:MODE RAW")
+        
+                
+        
         self.write(":WAV:DATA? CHAN{}".format(canal))
         rawdata = self.read_raw()[10:]
         data_size = len(rawdata)
+        
+        count = 0
+        while (data_size != EXPECTED_SIZE):
+            count += 1
+            print('Adquisition error expected %d samples (got %d), retrying (%d/%d)'%(EXPECTED_SIZE, data_size, count,RETRIES))
+            self.write(":RUN")
+            time_lib.sleep(0.5)
+            self.write(":STOP")
+            time_lib.sleep(0.5)
+            self.write(":%s"%ADQ_STATE)
+            
+            self.write(":WAV:DATA? CHAN{}".format(canal))
+            rawdata = self.read_raw()[10:]
+            data_size = len(rawdata)
+            
+            
+            if count >= RETRIES:
+                print('Error en la adquisicion. (numero máximo de intentos agotado)')
+                return
+            
+            
+            
+        
         sample_rate = float(self.query(':ACQ:SAMP?'))
         if VERBOSE:
             print ('Data size:', data_size, "Sample rate:", sample_rate)
+            print('adquisition mode: %s'%self.query(':WAVeform:POINts:MODE?'))
+            print('Math state: %s'%self.query(':MATH:DISPlay?'))
         self.write(":KEY:FORCE")
         
         data = np.frombuffer(rawdata, 'B')
@@ -442,11 +520,12 @@ class rigol(Instrument):
 # get the actual voltage.
         data = (data - 130.0 - voltoffset/voltscale*25) / 25 * voltscale
 
-# Now, generate a time axis.
-        time = np.linspace(0,len(data)/sample_rate, num=len(data))
+        # Now, generate a time axis.
+        if data_size != 600:
+            time = np.linspace(0,len(data)/sample_rate, num=len(data))
+        else:
+            time = np.linspace(0,timescale*10.0, num=len(data))
 
-        self.write(":RUN")
  
         return time,data
-        
 
