@@ -40,29 +40,38 @@ class Mediciones():
         """ devuelve el valor de desviacion en frecuencia dada una frecuencia de portadora fc"""
         pass
 
-    def THD(self,time,voltage,fft_samples=2000):
+    def THD(self,time,voltage):
         """Calculo de la distorsion armonica."""
-        # Calculo la fft
-        xf = np.fft.fftfreq(voltage.size,d=1/fft_samples)
-        yf = np.fft.fft(voltage)    
-        # Encuentro la frecuencia fundamental
+        # Calculo la fft, quedandome solo con el espectro positivo
+        xf = np.fft.fftfreq(voltage.size)
+        xf = xf[:round(len(xf)/2)]
+        
+        yf = np.fft.fft(voltage) 
+        yf = yf[:round(len(yf)/2)]
+
+
+        # Encuentro la frecuencia fundamental (normalizada)
         f0 = 0
         value_f0 = 0
-        for f,value in zip(xf,yf):
-            if f>0 and abs(value)>value_f0:
+        # xf[1:] e yf[1:0] para no tener en cuenta la continua en la busqueda.
+        for f,value in zip(xf[1:],yf[1:]):
+            if  abs(value)>value_f0:
                 f0 = f
                 value_f0 = abs(value)
 
+
+        # Cargo los armonicos.
         valores_armonicos = []
-        for f,value in zip(xf,yf):
-            # Verifico que sea multiplo de la frecuencia fundamental
-            if (f0 and f % f0 == 0) and f>0:
+
+        for f,value in zip(xf[1:],yf[1:]):
+            if (f0 and f % f0 == 0):
                 valores_armonicos.append((f,abs(value)))
 
-        # Calculo la thd
+        # Calculo la thd.
         aux_sum = 0
         for t in valores_armonicos[1:]:
             aux_sum+= t[1]**2
         thd = np.sqrt(aux_sum)/valores_armonicos[0][1]
+
 
         return thd
