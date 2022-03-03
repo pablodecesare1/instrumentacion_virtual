@@ -19,8 +19,6 @@ freq = 50
 t = np.linspace(0, 1, samples, endpoint=False)
 pwm = signal.square(2 * np.pi * freq * t,duty = 0.6)
 
-pyplot.magnitude_spectrum(pwm, color ='green')
-plt.show()
 thd = Mediciones.THD("",t,pwm)
 print("THD:%.2f%%"%(thd*100))
 

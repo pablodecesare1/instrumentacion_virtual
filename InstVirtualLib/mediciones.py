@@ -12,6 +12,7 @@ Todos los calculos de los
 
 """
 
+from matplotlib import pyplot as plt
 import numpy as np
 
 
@@ -42,36 +43,22 @@ class Mediciones():
 
     def THD(self,time,voltage):
         """Calculo de la distorsion armonica."""
-        # Calculo la fft, quedandome solo con el espectro positivo
-        xf = np.fft.fftfreq(voltage.size)
-        xf = xf[:round(len(xf)/2)]
+        # Calculo la fft, quedandome solo con el espectro positivo y saco la continua.
         
-        yf = np.fft.fft(voltage) 
-        yf = yf[:round(len(yf)/2)]
+        yf = np.fft.fft(voltage)
+        yf = yf[1:round(len(yf)/2)]
+        yf = np.abs(yf) # Obtengo el modulo
 
+        # Calculo el indice donde esta la frecuencia fundamental
+        f0_index = np.argmax(yf)
+        
+        # Armo vector con los indices de los armonicos
+        harmonics__index = np.arange(f0_index,len(yf)-1,f0_index)
+        
+        # Creo vector con valores de los harmonicos
+        harmonics_values = yf[harmonics__index]
 
-        # Encuentro la frecuencia fundamental (normalizada)
-        f0 = 0
-        value_f0 = 0
-        # xf[1:] e yf[1:0] para no tener en cuenta la continua en la busqueda.
-        for f,value in zip(xf[1:],yf[1:]):
-            if  abs(value)>value_f0:
-                f0 = f
-                value_f0 = abs(value)
-
-
-        # Cargo los armonicos.
-        valores_armonicos = []
-
-        for f,value in zip(xf[1:],yf[1:]):
-            if (f0 and f % f0 == 0):
-                valores_armonicos.append((f,abs(value)))
-
-        # Calculo la thd.
-        aux_sum = 0
-        for t in valores_armonicos[1:]:
-            aux_sum+= t[1]**2
-        thd = np.sqrt(aux_sum)/valores_armonicos[0][1]
-
-
+        # Calculo thd
+        thd = np.sqrt(np.sum(harmonics_values[1:]**2))/harmonics_values[0]
+ 
         return thd
