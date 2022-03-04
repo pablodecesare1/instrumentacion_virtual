@@ -12,6 +12,7 @@ Todos los calculos de los
 
 """
 
+from math import floor
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -46,7 +47,7 @@ class Mediciones():
         # Calculo la fft, quedandome solo con el espectro positivo y saco la continua.
         
         yf = np.fft.fft(voltage)
-        yf = yf[1:round(len(yf)/2)]
+        yf = yf[1:floor(len(yf)/2)]
         yf = np.abs(yf) # Obtengo el modulo
 
         # Calculo el indice donde esta la frecuencia fundamental
