@@ -10,21 +10,22 @@ import pyvisa as visa
 import sys
 sys.path.insert(0, 'InstVirtualLib')
 # Traemos la clase base que implmenta las funciones de VISA
-from InstVirtualLib import instrument as Instrument
+from InstVirtualLib.instrument import Instrument as Instrument
 import platform
 
 
 # Pedimos la lista de instrumentos
 platforma = platform.platform()
 print(platforma)
-if 'pyvisa' in sys.modules:
-	rm=visa.ResourceManager('@py')
-	print('pyvisa')
-elif 'visa' in sys.modules:
-	rm=visa.ResourceManager('@ni')
-	print('visa')
-else:
-	error()
+# if 'pyvisa' in sys.modules:
+# 	rm=visa.ResourceManager('@py')
+# 	print('pyvisa')
+# elif 'visa' in sys.modules:
+# 	rm=visa.ResourceManager('@ni')
+# 	print('visa')
+# else:
+# 	error()
+rm = visa.ResourceManager()
 print(rm.list_resources())
 
 
