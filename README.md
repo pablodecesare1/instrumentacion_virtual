@@ -3,15 +3,17 @@
 Este repositorio contiene las clases que implementan el VISA para la automatización de diversos instrumentos de medición. Actualmente en construcción...
 
 
-# Instrucciones para la instalación en Ubuntu 18.04
+# Instrucciones para la instalación en Ubuntu 
 
 1. Instalar pyvisa-py:
 
 ```sh
 sudo apt update
 ```
+
+(solo Ubuntu 18.04)
 ```sh
-udo apt install python-pyvisa-py
+sudo apt install python-pyvisa-py
 ```
 2. Instalar dependencias de python:
 ```sh

@@ -38,14 +38,7 @@ USE_DEVICE = 0
 # Abrimos el instrumento
 platforma = platform.platform()
 print(platforma)
-if 'pyvisa' in sys.modules:
-	rm=visa.ResourceManager('@py')
-	print('pyvisa')
-elif 'visa' in sys.modules:
-	rm=visa.ResourceManager('@ni')
-	print('visa')
-else:
-	error()
+rm=visa.ResourceManager()
 
 instrument_handler=rm.open_resource(rm.list_resources()[USE_DEVICE])
 
