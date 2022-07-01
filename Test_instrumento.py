@@ -17,14 +17,15 @@ import platform
 # Pedimos la lista de instrumentos
 platforma = platform.platform()
 print(platforma)
-if 'pyvisa' in sys.modules:
-	rm=visa.ResourceManager('@py')
-	print('pyvisa')
-elif 'visa' in sys.modules:
-	rm=visa.ResourceManager('@ni')
-	print('visa')
-else:
-	error()
+# if 'pyvisa' in sys.modules:
+# 	rm=visa.ResourceManager('@py')
+# 	print('pyvisa')
+# elif 'visa' in sys.modules:
+# 	rm=visa.ResourceManager('@ni')
+# 	print('visa')
+# else:
+# 	error()
+rm = visa.ResourceManager()
 print(rm.list_resources())
 
 
