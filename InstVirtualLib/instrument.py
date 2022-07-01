@@ -25,7 +25,7 @@ class Instrument:
         
     def close(self):
         self.instrument_handle.before_close()
-        self.instrument_handle.clear()
+        # self.instrument_handle.clear()
         self.instrument_handle.close()
 
     def print_ID(self):
