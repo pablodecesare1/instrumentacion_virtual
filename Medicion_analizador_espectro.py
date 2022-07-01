@@ -21,7 +21,7 @@ USE_DEVICE = 0
 #platforma = platform.platform();
 #print(platforma)
 
-rm=visa.ResourceManager('@ni')
+rm=visa.ResourceManager()
 print(rm.list_resources())
 
 
