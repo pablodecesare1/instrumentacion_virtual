@@ -29,8 +29,8 @@ class Instrument:
         self.instrument_handle.close()
 
     def print_ID(self):
-    	print(self.INSTR_ID)
-	
+        print(self.INSTR_ID)
+
 
     def write(self, command_string):
         """ Implement visa write command """
@@ -41,17 +41,17 @@ class Instrument:
         """ Implement visa query command """
 
         return self.instrument_handle.query(command_string)
-    
+
     def read(self):
         """ Implement visa read command """
         
         return self.instrument_handle.read()
-    
+
     def read_raw(self):
         """ Implement visa read raw command """
         
         return self.instrument_handle.read_raw()
-    
+
     def read_bytes(self, bytes_read, break_term=True):
         """ Implement visa read bytes command """
         
