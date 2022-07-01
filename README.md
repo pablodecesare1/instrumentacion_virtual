@@ -17,7 +17,7 @@ sudo apt install python-pyvisa-py
 ```
 2. Instalar dependencias de python:
 ```sh
-pip3 install pyvisa pyvisa-py PyUSB
+pip3 install -r requirements.txt
 ```
 
 3. Dar acceso al usb al usuario de python:

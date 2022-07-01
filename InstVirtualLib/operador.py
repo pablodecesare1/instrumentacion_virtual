@@ -45,6 +45,18 @@ class Operador_osciloscopio(mediciones.Mediciones):
 		# devolver eje en frecuencia
 		pass
 
+	def medir_thd(self,canal=1,VERBOSE= False):
+		if VERBOSE:
+			print("metodo de medicion realizado por {}".format(self.operador))
+			print("con el instrumento {}".format(self.instrument.print_ID()))
+
+		tiempo,tension = self.instrument.get_trace(canal, VERBOSE)
+
+		return self.THD(tiempo,tension)
+		
+
+
+
 
 class Operador_generador(mediciones.Mediciones):
     
