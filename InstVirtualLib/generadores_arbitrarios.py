@@ -43,6 +43,29 @@ class generador_arbitrario(Instrument):
         pass
 
     
+#------------------------------------------------------------------------------
+#------------------------- RigolDG5071 ------------------------------------------
+#------------------------------------------------------------------------------
+
+
+class RigolDG5071(generador_arbitrario):
+    
+    def __init__(self,handler):
+        super().__init__(handler)
+        self.signal_str=0
+   
+    def setArbTestMemory(self, poin_array):
+        out_str = ':DATA VOLATILE,'
+        for point in poin_array:
+            out_str += '%0.4f, '%point
+        out_str = out_str[:-2]
+        self.write(out_str)
+    
+    def continua(self,amp=1):
+        self.setArbTestMemory([1.0, 1.0])
+        self.write(":APPL:USER 1,0,-%0.4f,0 "%amp)
+
+        
 
 
 #------------------------------------------------------------------------------
