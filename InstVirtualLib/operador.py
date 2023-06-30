@@ -54,9 +54,30 @@ class Operador_osciloscopio(mediciones.Mediciones):
 
 		return self.THD(tiempo,tension)
 		
+	def medir_rc(self,R,canal_in=1,canal_out=2,VERBOSE=False):
+		t,v1 = self.instrument.get_trace(canal_in, VERBOSE)
+		t,v2 = self.instrument.get_trace(canal_out, VERBOSE)
+		f1 = np.fft.fft(v1)/len(np.fft.fft(v1))
+		f2 = np.fft.fft(v2)/len(np.fft.fft(v1))
+
+		freq = np.fft.fftfreq(len(f1), d=(t[1]-t[0]))
+
+		n = round(len(f2)/2)
+
+		f1 = f1[0:n]
+		f2 = f2[0:n]
+		freq = freq[0:n]
 
 
+		pico_idx = np.argmax(f2)
 
+		diff_fase = np.angle(f2)[pico_idx] - np.angle(f1)[pico_idx]
+
+		R = 1200
+
+		C = 1/(np.tan(diff_fase)*R*freq[pico_idx]*2*np.pi)
+
+		return C
 
 class Operador_generador(mediciones.Mediciones):
     
