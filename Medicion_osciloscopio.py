@@ -57,8 +57,8 @@ print("Esta conectado un %s"%MiOsciloscopio.INSTR_ID)
 
 
 # Pedimos el trazo de cada canal, la salida es en ([seg.],[volt])
-tiempo1,tension1=MiOsciloscopio.get_trace("1")
-tiempo2,tension2=MiOsciloscopio.get_trace("2")
+tiempo1,tension1=MiOsciloscopio.get_trace("1",VERBOSE=False)
+tiempo2,tension2=MiOsciloscopio.get_trace("2",VERBOSE=False)
 
 # Ploteamos los canales
 plt.plot(tiempo1,tension1,tiempo2,tension2)
@@ -66,9 +66,9 @@ plt.show()
 
 
 # Generamos un operador y pedimos el valor RMS actual
-operador_1 = operador.Operador(MiOsciloscopio,"Workbench_I")
+operador_1 = operador.Operador_osciloscopio(MiOsciloscopio,"Workbench_I")
 
-val_RMS = operador_1.medir_Vrms(canal = 1, VERBOSE = True)
+val_RMS = operador_1.medir_Vrms(canal = 1, VERBOSE = False)
 
 print('Vrms = %0.5f'%val_RMS)
 
