@@ -18,77 +18,106 @@ import mediciones
 
 class Operador_osciloscopio(mediciones.Mediciones):
     
-	def __init__(self,inst,operador):
-		# nombre del equipo dado por el usuario
-		self.operador	= operador
-		# Clase de instrumento
-		self.instrument	= inst
+    def __init__(self,inst,operador):
+        # nombre del equipo dado por el usuario
+        self.operador	= operador
+        # Clase de instrumento
+        self.instrument	= inst
 
 
-	def medir_Vrms(self, canal = 1, VERBOSE = False):
+    def medir_Vrms(self, canal = 1, VERBOSE = False):
 
-		if VERBOSE:
-			print("metodo de medicion realizado por {}".format(self.operador))
-			print("con el instrumento {}".format(self.instrument.print_ID()))
+        if VERBOSE:
+            print("metodo de medicion realizado por {}".format(self.operador))
+            print("con el instrumento {}".format(self.instrument.print_ID()))
 
-		tiempo,tension = self.instrument.get_trace(canal, VERBOSE)
+        tiempo,tension = self.instrument.get_trace(canal, VERBOSE)
 
-		return self.Vrms(tiempo,tension)
+        return self.Vrms(tiempo,tension)
     
-	def medir_detaF(self, canal = 1, VERBOSE = False):
-		pass
+    def medir_detaF(self, canal = 1, VERBOSE = False):
+        pass
 
-	def medir_indiceMod(self, canal = 1, VERBOSE = False):
-		pass
+    def medir_indiceMod(self, canal = 1, VERBOSE = False):
+        pass
 
-	def get_espectro(self, canal = 1, ventan='uniforme', VERBOSE = False):
-		# devolver eje en frecuencia
-		pass
+    def get_espectro(self, canal = 1, ventan='uniforme', VERBOSE = False):
+        # devolver eje en frecuencia
+        pass
 
-	def medir_thd(self,canal=1,VERBOSE= False):
-		if VERBOSE:
-			print("metodo de medicion realizado por {}".format(self.operador))
-			print("con el instrumento {}".format(self.instrument.print_ID()))
+    def medir_thd(self,canal=1,VERBOSE= False):
+        if VERBOSE:
+            print("metodo de medicion realizado por {}".format(self.operador))
+            print("con el instrumento {}".format(self.instrument.print_ID()))
 
-		tiempo,tension = self.instrument.get_trace(canal, VERBOSE)
+        tiempo,tension = self.instrument.get_trace(canal, VERBOSE)
 
-		return self.THD(tiempo,tension)
-		
-	def medir_rc(self,R,canal_in=1,canal_out=2,VERBOSE=False):
-		t,v1 = self.instrument.get_trace(canal_in, VERBOSE)
-		t,v2 = self.instrument.get_trace(canal_out, VERBOSE)
-		f1 = np.fft.fft(v1)/len(np.fft.fft(v1))
-		f2 = np.fft.fft(v2)/len(np.fft.fft(v1))
-
-		freq = np.fft.fftfreq(len(f1), d=(t[1]-t[0]))
-
-		n = round(len(f2)/2)
-
-		f1 = f1[0:n]
-		f2 = f2[0:n]
-		freq = freq[0:n]
+        return self.THD(tiempo,tension)
 
 
-		pico_idx = np.argmax(f2)
+    def medir_RC(self, R, canal_Vg = "1", canal_Vr = "2", metodo="FFT", VERBOSE = False):
+        """
+        Esta funcion sirve para medir el valor de un capacitor. Para esto se debe armar
+        un filtro RC pasa-altos con una resistencia conocida. A la entrada del filtro se
+        debe aplicar una señal senoida. La frecuencia exacta no es importante, pero debe
+        ser lo suficientemente alta como para observar defasaje y atenuacion entra la señal
+        de entrada y salida, pero no demasiado alta como para que la salida se encuentre muy
+        atenuada.
+        Para mediciones con los metodos de "Lissajous" y "Tiempo" es importante que el osciloscopio
+        se encuentre trigereando la señal correctamente.
 
-		diff_fase = np.angle(f2)[pico_idx] - np.angle(f1)[pico_idx]
 
-		R = 1200
+        R: Resistencia que se utilizo para armar el circuito
+        canal_Vg: Numero del canal conectado al generador
+        canal_Vr: Numero del canal conectado a la salida del filtro (Deberia medir la caida de tension
+        sbore R)
+        metodo: Puede tomar los valores "FFT", "Potencia", "Lissajous", "Tiempo". Determina que metodo se
+        utilizara para medir la capacitancia.
+        """
 
-		C = 1/(np.tan(diff_fase)*R*freq[pico_idx]*2*np.pi)
 
-		return C
+        if VERBOSE:
+            print("Adquiriendo Vg")
+        t,vg = self.instrument.get_trace(canal_Vg, VERBOSE)
+        if VERBOSE:
+            print("Adquiriendo Vr")
+        t,vr = self.instrument.get_trace(canal_Vr, VERBOSE)
+
+        if VERBOSE:
+            print("Calculando mediante metodo " + metodo)
+
+        C = 0
+
+        if metodo == "FFT":
+            C = self.medir_RC_fft(t, vg, vr, R, VERBOSE)
+
+        elif metodo == "Potencia":
+            C = self.medir_RC_potencia(t, vg, vr, R, VERBOSE)
+
+        elif metodo == "Lissajous":
+            C = self.medir_RC_lissajous(t, vg, vr, R, VERBOSE)
+
+        elif metodo == "Tiempo":
+            C = self.medir_RC_tiempo(t, vg, vr, R, VERBOSE)
+
+        else:
+            raise ValueError(metodo + " no es un argumento valido para \'metodo\'")
+
+        if VERBOSE:
+            print(f"C: {C}")
+
+        return C
 
 class Operador_generador(mediciones.Mediciones):
     
-	def __init__(self,inst,operador):
-		# nombre del equipo dado por el usuario
-		self.operador	= operador
-		# Clase de instrumento
-		self.instrument	= inst
+    def __init__(self,inst,operador):
+        # nombre del equipo dado por el usuario
+        self.operador	= operador
+        # Clase de instrumento
+        self.instrument	= inst
 
-	def generar_FM(self, fc, fm, deltaF, cant_muestras, offset, sample_rate=100000):
-		pass
+    def generar_FM(self, fc, fm, deltaF, cant_muestras, offset, sample_rate=100000):
+        pass
 
-	def generar_AM(self, fc, fm, M, cant_muestras, offset, sample_rate=100000):
-		pass
+    def generar_AM(self, fc, fm, M, cant_muestras, offset, sample_rate=100000):
+        pass
