@@ -67,12 +67,15 @@ class Operador_osciloscopio(mediciones.Mediciones):
         se encuentre trigereando la señal correctamente.
 
 
-        R: Resistencia que se utilizo para armar el circuito
+        R: Resistencia que se utilizo para armar el circuito en ohms
         canal_Vg: Numero del canal conectado al generador
         canal_Vr: Numero del canal conectado a la salida del filtro (Deberia medir la caida de tension
         sbore R)
         metodo: Puede tomar los valores "FFT", "Potencia", "Lissajous", "Tiempo". Determina que metodo se
         utilizara para medir la capacitancia.
+        VERBOSE: Imprime informacion de calculos intermedios
+
+        Retorna: Valor del capacitor en faradios
         """
 
 
