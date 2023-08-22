@@ -3,3 +3,4 @@ PyVISA-py==0.5.3
 matplotlib==3.5.2
 pyusb==1.2.1
 numpy==1.21.5
+scipy>=1.7.0
