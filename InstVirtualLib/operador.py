@@ -59,13 +59,10 @@ class Operador_osciloscopio(mediciones.Mediciones):
         """
         Esta funcion sirve para medir el valor de un capacitor. Para esto se debe armar
         un filtro RC pasa-altos con una resistencia conocida. A la entrada del filtro se
-        debe aplicar una señal senoida. La frecuencia exacta no es importante, pero debe
+        debe aplicar una señal senoidal. La frecuencia exacta no es importante, pero debe
         ser lo suficientemente alta como para observar defasaje y atenuacion entra la señal
         de entrada y salida, pero no demasiado alta como para que la salida se encuentre muy
         atenuada.
-        Para mediciones con los metodos de "Lissajous" y "Tiempo" es importante que el osciloscopio
-        se encuentre trigereando la señal correctamente.
-
 
         R: Resistencia que se utilizo para armar el circuito en ohms
         canal_Vg: Numero del canal conectado al generador
@@ -88,8 +85,6 @@ class Operador_osciloscopio(mediciones.Mediciones):
 
         if VERBOSE:
             print("Calculando mediante metodo " + metodo)
-
-        C = 0
 
         if metodo == "FFT":
             C = self.medir_RC_fft(t, vg, vr, R, VERBOSE)
