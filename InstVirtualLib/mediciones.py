@@ -15,7 +15,7 @@ Todos los calculos de los
 from math import floor
 from matplotlib import pyplot as plt
 import numpy as np
-from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter, windows
 
 
 class Mediciones():
@@ -105,7 +105,9 @@ class Mediciones():
         """
         t_sample = t[1]-t[0] #Intervalo de muestreo
         
-        v_fft = np.fft.fft(v)/len(v) #Calculo y normalizo FFT de la tension
+        v_windowed = v*windows.flattop(len(v)) #Utilizo una venta flat-top para mejor mediciones de amplitud
+
+        v_fft = np.fft.fft(v_windowed)/len(v_windowed) #Calculo y normalizo FFT de la tension
         freq_fft = np.fft.fftfreq(len(v_fft), d=t_sample) #Genero lista de frecuencias correspondientes a la FFT
 
         #Al ser una senal real, el espectro esta espejado. Me quedo solo cun una mitad
@@ -175,7 +177,7 @@ class Mediciones():
 
 
             
-    def medir_RC_fft(self, t, vg, vr, R, VERBOSE):
+    def medir_RC_fft(self, t, vg, vr, R, VERBOSE=False):
         """
         Calcula la FFT de las señales de entrada para identificar la diferencia de fase de sus
         componentes principales y asi calcular la capacitancia
@@ -197,7 +199,7 @@ class Mediciones():
         return C
 
         
-    def medir_RC_potencia(self, t, vg, vr, R, VERBOSE):
+    def medir_RC_potencia(self, t, vg, vr, R, VERBOSE=False):
         """
         Calcula la potencia activa como el promedio de la potencia instantanea y calcula
         la potencia activa como el producto de la tension y corriente RMS. De ahi calcula
@@ -231,7 +233,7 @@ class Mediciones():
         return C
         
         
-    def medir_RC_lissajous(self, t, vg, vr, R, VERBOSE):
+    def medir_RC_lissajous(self, t, vg, vr, R, savgol=False, VERBOSE=False):
         """
         Identifica los cruces por cero de Vg y obtiene el valor de Vr para esos instantes.
         Utilizando la relacion de estos valores con los valores picos de Vr, se puede calcular
@@ -248,9 +250,12 @@ class Mediciones():
         periodo_sampleo = t[1] - t[0]
 
         #Aplico filtros
-        vg_filt = savgol_filter(vg, round(0.5/(periodo_sampleo*frecuencia)), 4)
-        vr_filt = savgol_filter(vr,round(0.5/(periodo_sampleo*frecuencia)), 4)
-
+        if(savgol):
+            vg_filt = savgol_filter(vg, round(0.5/(periodo_sampleo*frecuencia)), 4)
+            vr_filt = savgol_filter(vr,round(0.5/(periodo_sampleo*frecuencia)), 4)
+        else:
+            vg_filt = vg
+            vr_filt = vr
         #### CALCULO A : Este es el valor pico a pico de Vr ####
 
         #Obotengo los picos positivos y negativos de Vr
@@ -292,7 +297,7 @@ class Mediciones():
         return C
         
 
-    def medir_RC_tiempo(self, t, vg, vr, R, VERBOSE):
+    def medir_RC_tiempo(self, t, vg, vr, R, savgol=False, VERBOSE=False):
         """
         Encuentra los cruces por cero de Vg y Vr, calcula el retardo de la señal y luego calcula
         la diferencia de fase con la que calcula la capacitancia.
@@ -304,9 +309,12 @@ class Mediciones():
         periodo_sampleo = t[1] - t[0]
 
         #Aplico filtros
-        vg_filt = savgol_filter(vg, round(0.5/(periodo_sampleo*frecuencia)), 4)
-        vr_filt = savgol_filter(vr,round(0.5/(periodo_sampleo*frecuencia)), 4)
-
+        if(savgol):
+            vg_filt = savgol_filter(vg, round(0.5/(periodo_sampleo*frecuencia)), 4)
+            vr_filt = savgol_filter(vr,round(0.5/(periodo_sampleo*frecuencia)), 4)
+        else:
+            vg_filt = vg
+            vr_filt = vr
 
         tiempos_vg_pn = t[self.get_cruces_por_cero(vg_filt, direccion='pos_a_neg')]
         tiempos_vr_pn = t[self.get_cruces_por_cero(vr_filt, direccion='pos_a_neg')]
