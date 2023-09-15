@@ -62,7 +62,7 @@ class osciloscopio(Instrument):
     def set_triggerLevel(self,valor):
         pass
     def set_triggerSource(self,canal):
-        pass
+        raise ValueError("No implementado.")
     def set_triggerSlope(self,valor):
         pass
     def set_triggerType(self,tipo):
