@@ -232,10 +232,10 @@ class GW_Instek(osciloscopio):
         print("Base de tiempo: ",time)
         
         self.write(':ACQ%s:MEM?'%canal)
-        memoria_canal = self.read_bytes(8014, break_term=True)
+        memoria_canal = self.read_bytes(8014, break_term=False)
         print("Leidos %d datos"%len(memoria_canal))
         
-        tension_volt = self.Parsear_canal(memoria_canal, offset, scale, 2000, VERBOSE)
+        tension_volt = self.Parsear_canal(memoria_canal, offset, scale, -1, VERBOSE)
         #tiempo_seg = np.arange(0,len(tension_volt),1)*time
         tiempo_seg = np.linspace(0,time*8,len(tension_volt)) # 8 porque observamos eso, CHECKEAR
             
