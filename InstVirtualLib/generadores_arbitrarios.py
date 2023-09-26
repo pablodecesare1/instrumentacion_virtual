@@ -129,7 +129,27 @@ class Agilent33512A(generador_arbitrario):
         self.signal_str=self.signal_str.replace(self.signal_str[0],"")
         self.signal_str=self.signal_str.replace(self.signal_str[-1],"")
 
-    def arb_signal(self,muestras, amp_scale = 1, offset = 0, sample_rate=100000):
+    def set_arb_mem(self, db_scale, channel):
+        # La cargo al instrumento
+        self.setTestMemory()
+        # Asigno un vector arbitrario
+        self.setArbTestMemory()
+        # Seteo la escala de tensión
+        self.setScale(dB_scale=db_scale)
+        # Seteo el Offset
+        self.setOffset()
+        # Seteo la impedancia de salida al maximo
+        self.setMaxOutputImpedance()
+        # Seteo el sample rate
+        self.setSampleRate()
+        # Seteo el modo arbitrario al canal 1
+        self.setArbFunction(channel)
+        # Enciendo la salida
+        self.encenderCanal(channel)
+
+        return
+
+    def arb_signal(self,muestras, db_scale=False, amp_scale = 0, offset = 0, sample_rate=100000, channel = 0):
 
         self.clear()
         
@@ -137,61 +157,30 @@ class Agilent33512A(generador_arbitrario):
         self.signal = muestras
         self.amp=amp_scale
         self.sampleRate = sample_rate
-        self.offset=0
+        self.offset=offset
 
-        # La cargo al instrumento
-        self.setTestMemory()
-        # Asigno un vector arbitrario
-        self.setArbTestMemory()
-        # Seteo la escala de tensión
-        self.setScale(dB_scale=False)
-        # Seteo el Offset
-        self.setOffset()
-        # Seteo la impedancia de salida al maximo
-        self.setMaxOutputImpedance()
-        # Seteo el sample rate
-        self.setSampleRate()
-        # Seteo el modo arbitrario al canal 1
-        self.setArbFunction(0)
-        # Enciendo la salida
-        self.encenderCanal(0)
+        self.set_arb_mem(db_scale, channel)
+
+        return
+
+        
 
 
-    def senoidal(self,freq=1e3,amp=0, sample_rate=100000):
+    def senoidal(self,freq=1e3,amp=0, sample_rate=100000, channel = 0):
         """ frecuencia en Hz, tension Vpp """
         
         self.clear()
         
-        # Cargo los valores en la clase
-        self.amp=amp
-        self.sampleRate = sample_rate # 100khz de fs
-        
         # Armo la señal
         memory=10000 # 1 M de memoria
-        t=np.linspace(0,memory*1/self.sampleRate,memory)
+        t=np.linspace(0,memory*1/sample_rate,memory)
         prueba_np=np.round(np.sin(2*np.pi*freq*t),3)
 
         # Cargo la señal en la clase
         self.signal = prueba_np
-        
-        # La cargo al instrumento
-        self.setTestMemory()
-        # Asigno un vector arbitrario
-        self.setArbTestMemory()
-        # Seteo la escala de tensión
-        self.setScale(dB_scale=True)
-        # Seteo el Offset
-        self.offset=0
-        self.setOffset()
-        # Seteo la impedancia de salida al maximo
-        self.setMaxOutputImpedance()
-        # Seteo el sample rate
-        self.setSampleRate()
-        # Seteo el modo arbitrario al canal 1
-        self.setArbFunction(0)
-        # Enciendo la salida
-        self.encenderCanal(0)
 
+        self.arb_signal(prueba_np, db_scale=True, amp_scale = amp, offset = 0, sample_rate=sample_rate, channel=channel)
+        
         return (t, prueba_np)
     
     def continua(self,amp=1):
@@ -199,4 +188,56 @@ class Agilent33512A(generador_arbitrario):
         self.write("SOURce1:FUNCtion DC")
         # Seteamos el valor de salida
         self.setOffset(amp)
+        
+
+
+
+
+#------------------------------------------------------------------------------
+#------------------------- SIGLENT ------------------------------------------
+#------------------------------------------------------------------------------
+
+
+class Siglent1032X(generador_arbitrario):
+    
+    def __init__(self,handler):
+        super().__init__(handler)
+        self.signal_str=0
+    
+    def get_channel_string(self, canal):
+        if canal == 0:
+            return 'C1'
+        elif canal == 1:
+            return 'C2'
+        else:
+            raise ValueError('The Arb. generator has only 2 channels.')
+        
+    def enable_output(self, canal=0):
+        self.write('{}:OUTP ON'.format(self.get_channel_string(canal)))
+
+    def disable_output(self, canal=0):
+        self.write('{}:OUTP OFF'.format(self.get_channel_string(canal)))
+
+    def setOffset(self, new_offset=None, canal=0):
+        if new_offset != None:
+            self.offset = new_offset
+        
+        self.write("{}:BSWV OFST, {}".format(self.get_channel_string(canal), str(self.offset)))
+  
+    def continua(self,offset=1, canal=0):
+        # Seteamos en 
+        self.write('{}:BSWV WVTP, DC'.format(self.get_channel_string(canal)))
+        # Seteamos el valor de salida
+        self.setOffset(offset, canal=canal)
+
+    def senoidal(self,freq=1e3,amp=0, canal = 0, offset = 0):
+        """ frecuencia en Hz, tension pico """
+
+        ch_str = self.get_channel_string(canal)
+
+        self.write('{}:BSWV WVTP, SINE'.format(ch_str))
+        self.write('{}:BSWV AMP, {}'.format(ch_str, str(amp)))
+        self.write('{}:BSWV OFST, {}'.format(ch_str, str(offset)))
+        self.write('{}:BSWV FRQ, {}'.format(ch_str, str(freq)))
+
         
