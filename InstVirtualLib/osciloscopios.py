@@ -62,7 +62,7 @@ class osciloscopio(Instrument):
     def set_triggerLevel(self,valor):
         pass
     def set_triggerSource(self,canal):
-        raise ValueError("No implementado.")
+        pass
     def set_triggerSlope(self,valor):
         pass
     def set_triggerType(self,tipo):
@@ -237,7 +237,10 @@ class GW_Instek(osciloscopio):
         
         tension_volt = self.Parsear_canal(memoria_canal, offset, scale, -1, VERBOSE)
         #tiempo_seg = np.arange(0,len(tension_volt),1)*time
-        tiempo_seg = np.linspace(0,time*8,len(tension_volt)) # 8 porque observamos eso, CHECKEAR
+        tiempo_seg = np.linspace(0,time*16,len(tension_volt))
+        
+        # 8 porque observamos eso, CHECKEAR
+        ## OJO, *8 genera una frecuencia del doble de la real, *16 la genera bien
             
         return tiempo_seg, tension_volt
     

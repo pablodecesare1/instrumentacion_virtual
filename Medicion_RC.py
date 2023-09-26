@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun  30 09:57:19 2023
+Created on Fri Jun  1 09:57:19 2018
 
-@author: Santiago
+@author: Ramiro
 """
 
 # Traemos la libreria VISA
@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import sys
 
 sys.path.insert(0, 'InstVirtualLib')
+## TODO: Hay que chequear como poner bien el path a la libreria
 
 import platform
 # Traemos todos los osciloscopios
@@ -21,7 +22,7 @@ from InstVirtualLib.osciloscopios import rigol
 from InstVirtualLib.osciloscopios import Tektronix_DSO_DPO_MSO_TDS
 # Traemos el operador
 import operador
-
+import numpy as np
 # Definimos una funcion para poder ejecutar un mensaje de error
 def excepthook(type, value, traceback):
     print(value)
@@ -35,7 +36,7 @@ OSCILOSCOPIOS = 0	# 0: GW_Instek
         			# 1: Rigol
 			        # 2: Tektronix_DSO_DPO_MSO_TDS
 
-USE_DEVICE = 0
+USE_DEVICE = 1
 
 
 # Abrimos el instrumento
@@ -79,10 +80,23 @@ ax_R.plot(tiempo2,tension2, color='red', label='Tension sobre R')
 plt.legend()
 plt.show()
 
-# Generamos un operador
+# TODO: hacer que no imprima de vuelta los datos del canal
+# Generamos un operador y pedimos el valor RMS actual
 operador_1 = operador.Operador_osciloscopio(MiOsciloscopio,"Workbench_I")
 
-valor_cap= operador_1.medir_RC(1200, 1, 2, "POT")
+val_RMS = operador_1.medir_Vrms(canal = 1, VERBOSE = False)
+
+print('Vrms = %0.5f'%val_RMS)
+
+save_data= 0
+
+if save_data:
+    np.savetxt('./saved_data/tension1.csv', tension1, delimiter=',')
+    np.savetxt('./saved_data/tension2.csv', tension2, delimiter=',')
+    np.savetxt('./saved_data/tiempo1.csv', tiempo1, delimiter=',')
+    np.savetxt('./saved_data/tiempo2.csv', tiempo2, delimiter=',')
+
+valor_cap= operador_1.medir_RC(1200, 1, 2, "LISSAJ")
 
 print('Valor del capacitor = %f'%(valor_cap*10**9),'nF')
 
