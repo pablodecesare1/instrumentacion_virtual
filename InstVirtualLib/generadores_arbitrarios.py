@@ -17,6 +17,7 @@ from instrument import Instrument
 # Importamos el resto de las funciones a utilizar
 import numpy as np
 from struct import unpack
+import time
 
 #------------------------------------------------------------------------------
 #------------------------- BASE CLASS -----------------------------------------
@@ -232,12 +233,15 @@ class Siglent1032X(generador_arbitrario):
 
     def senoidal(self,freq=1e3,amp=0, canal = 0, offset = 0):
         """ frecuencia en Hz, tension pico """
+        print(f"modificar la frecuencia a {freq} y amplitud {amp}" )
+        nombre = input("Inserte un valor para avanzar")
 
+        
         ch_str = self.get_channel_string(canal)
 
         self.write('{}:BSWV WVTP, SINE'.format(ch_str))
         self.write('{}:BSWV AMP, {}'.format(ch_str, str(amp)))
         self.write('{}:BSWV OFST, {}'.format(ch_str, str(offset)))
         self.write('{}:BSWV FRQ, {}'.format(ch_str, str(freq)))
-
+        
         

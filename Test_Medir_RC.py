@@ -33,7 +33,7 @@ OSCILOSCOPIOS = 0	# 0: GW_Instek
 			# 1: rigol
 			# 2: Tektronix_DSO_DPO_MSO_TDS
 
-USE_DEVICE = 0
+USE_DEVICE = -1
 
 
 # Abrimos el instrumento
