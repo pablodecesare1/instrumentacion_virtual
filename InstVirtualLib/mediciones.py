@@ -16,7 +16,8 @@ from math import floor
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.signal import savgol_filter, windows
-
+import scipy as sp
+import time
 
 class Mediciones():
 
