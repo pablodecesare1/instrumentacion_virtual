@@ -16,41 +16,28 @@ def export_trace_to_csv(
     freq_hz: Number,
     measurement_idx: int,
 ) -> str:
-    """
-    Guarda una traza en un CSV con formato:
-        <FREQ>-<NroMedicion>-<IN/OUT>.csv
 
-    Ejemplo:
-        20_000-1-OUT.csv
-
-    Parámetros
-    ----------
-    out_dir : str
-        Carpeta donde se va a guardar el archivo.
-    time_s : array-like
-        Vector de tiempo en segundos.
-    voltage_v : array-like
-        Vector de tensión en voltios.
-    port : str
-        "IN" o "OUT".
-    freq_hz : float
-        Frecuencia en Hz.
-    measurement_idx : int
-        Número de medición (1, 2, 3, ...).
-
-    Devuelve
-    --------
-    str
-        Ruta completa del archivo CSV generado.
-    """
     os.makedirs(out_dir, exist_ok=True)
 
     port = port.upper()
     if port not in ("IN", "OUT"):
         raise ValueError(f"port inválido: {port}. Esperaba 'IN' o 'OUT'.")
 
-    # 20000 -> "20_000"
-    freq_str = f"{int(round(freq_hz)):,}".replace(",", "_")
+    # ==========================================
+    # freq en Hz → formateo "<entero>_000"
+    # ej: 20000 → "20000_000"
+    #     112468 → "112468_000"
+    # ==========================================
+
+    # Paso 1: convertir a string con 3 decimales en kHz
+    freq_khz = freq_hz / 1000.0               # 20000 Hz → 20.000
+    freq_khz_str = f"{freq_khz:.3f}"          # siempre 3 decimales
+
+    # Paso 2: eliminar "." y formato miles
+    ent = freq_khz_str.replace(".", "").replace(",", "")
+
+    # Paso 3: agregar _000 (los Hz decimales)
+    freq_str = f"{ent}_000"
 
     filename = f"{freq_str}-{measurement_idx}-{port}.csv"
     filepath = os.path.join(out_dir, filename)

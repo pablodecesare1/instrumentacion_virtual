@@ -13,12 +13,13 @@ clase base "osciloscopio"
 """
 
 # Traemos la clase base que implmenta las funciones de VISA
-from instrument import Instrument
 # Importamos el resto de las funciones a utilizar
 import numpy as np
 from struct import unpack
 
 import time as time_lib
+
+from InstVirtualLib.instrument import Instrument
 
 
 #------------------------------------------------------------------------------

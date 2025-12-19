@@ -12,19 +12,17 @@ import platform
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import pyvisa as visa
-import vxi11
 from IPython.core.display_functions import clear_output
+from numpy.random._examples.cffi.extending import rng
 
-from Sweep.Report_generator.Measurement_save import export_trace_to_csv
-from Sweep.Report_generator.Report_maker import createReport
-from Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
-from Sweep.SweepAnalisis.Sweep_utils import procesar_bloque
+from InstVirtualLib.Sweep.Report_generator.Measurement_save import export_trace_to_csv
+from InstVirtualLib.Sweep.Report_generator.Report_maker import createReport
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_strategies import InputPeakBinSelector
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_utils import procesar_bloque
+from InstVirtualLib.Sweep.TEST.Utils_tb import CsvSignalSource
 
 sys.path.insert(0, "InstVirtualLib")
-from InstVirtualLib.osciloscopios import RIGOL_DS2202              # noqa: E402
-from InstVirtualLib.generadores_arbitrarios import Siglent1032X    # noqa: E402
 
 
 # ====================== PARÁMETROS DE BARRIDO =========================================================================================
@@ -41,28 +39,26 @@ MEDICIONES_POR_FREQ = 3
 
 # ===================== FUNCIONES AUXILIARES ========================
 
-def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
-    """
-        Ejecuta un barrido en frecuencia usando el generador y el osciloscopio.
-
-        Devuelve un DataFrame con columnas:
-          - freq_Hz
-          - mag_dB
-          - phase_deg
-          - incert_dB
-          - incert_phase_deg
-        """
-    print("Inicializando barrido...")
-    print("Plataforma:", platform.platform())
-
-
-    freqs = np.geomspace(F_START, F_STOP, NUM_POINTS)
-    os.makedirs(SAVE_PATH, exist_ok=True)
-
+def run_sweep():
     print("Inicializando barrido...")
     print("Plataforma:", platform.platform())
 
     t0 = time.time()
+
+    ## ===================== CSV SETTINGS ========================
+    base_dir = "./mediciones/1kptos/"
+    #base_dir = "../resultados_sweep/"
+
+    src = CsvSignalSource(base_dir)
+    freqs_all = src.get_frequencies()
+    # si querés usar todas las frecuencias del CSV:
+    freq_indices = list(range(len(freqs_all)))
+    freqs = np.array([freqs_all[i] for i in freq_indices], dtype=float)
+    NUM_POINTS = len(freqs)
+    print("Frequencias:", freqs)
+    ## ===================== CSV SETTINGS ========================
+
+
 
     # --------------- setup de arrays de resultados ---------------
     ganancias       = np.zeros_like(freqs, dtype=float)
@@ -74,41 +70,49 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
 
     # --------------- setup del osciloscopio ---------------
     time_base_inicial = 1.0 / freqs[0]
-    scope.set_BT(f"{time_base_inicial:.2f}")
-    scope.set_chan_DIV(AMPLITUDE_VPP, 1)
-    scope.set_chan_DIV(AMPLITUDE_VPP, 2)
-    scope.set_memdepth("70000")
+    peak_strategy = InputPeakBinSelector(ignore_dc=True)
+
+
 
     # --------------- barrido en frecuencia ---------------
     for i, f in enumerate(freqs):
+        meds_in = sorted({med for (ff, port, med) in src.files.keys() if ff == f and port == "IN"})
+        meds_out = sorted({med for (ff, port, med) in src.files.keys() if ff == f and port == "OUT"})
+        meds_ok = sorted(set(meds_in).intersection(meds_out))
         print(f"\n[{i + 1}/{NUM_POINTS}] Frecuencia = {f:.1f} Hz")
-
-        # Configurar generador
-        gen.senoidal(f, AMPLITUDE_VPP)
-        print(f"Seteando generador: f = {f:.1f} Hz, Vpp = {AMPLITUDE_VPP}")
-        gen.enable_output()
         ruidos_por_freq = list()
-
+        if MEDICIONES_POR_FREQ is not None:
+            meds_ok = meds_ok[:int(MEDICIONES_POR_FREQ)]
+        # Configurar generador
+        print(f"Seteando generador: f = {f:.1f} Hz, Vpp = {AMPLITUDE_VPP}")
         # Configurar timebase del osciloscopio según frecuencia
-        time_base = 1.0 / f
-        scope.set_BT(f"{time_base:.6f}")
-
-        time.sleep(2)  # dejar estabilizar
 
 
-
-        fs = float(scope.get_samplerate())
-        bloque = BloqueIO(nro_mediciones=MEDICIONES_POR_FREQ)
+        fs = 50e3
+        bloque = BloqueIO(frecuencia=float(f), nro_mediciones=MEDICIONES_POR_FREQ, bin_selector=peak_strategy)
         bloque.frecuencia = f
 
         estados[i] = "midiendo"
+        # render_status(freqs, estados)
         for j in range(bloque.nro_mediciones):
-            t_in, x_in = scope.get_trace(1)
-            t_out, x_out = scope.get_trace(2)
-
-            bloque.measure(x_in, x_out, t_in, t_out, fs_in=fs, fs_out=fs)  # Probamos con la fs calculada, despues vemos que onda la fs del oscilo
+            # Adquirir trazas
+            f_in, fs_in, t_in, v_in = src.get_input(freq_idx=i, medicion=meds_ok[j])
+            f_out, fs_out, t_out, v_out = src.get_output(freq_idx=i, medicion=meds_ok[j])
+            """"
+            plt.plot(t_in, v_in)
+            plt.plot(t_in, v_in)
+            plt.show()
+            input("pulse pa avasnsar")
+            """
+            amp_noise = 5
+            noise_in = amp_noise * rng.normal(0.0, 0.01, len(v_in))
+            noise_out = amp_noise * rng.normal(0.0, 0.01, len(v_out))
+            v_out += noise_out
+            v_in += noise_in
+            bloque.measure(v_in, v_out, t_in, t_out, fs_in=fs, fs_out=fs)  # Probamos con la fs calculada, despues vemos que onda la fs del oscilo
             print(f"finalizada medicion [{j}/{bloque.nro_mediciones}] de la freq = {f:.1f} Hz [{i}/{NUM_POINTS}]")
-            saveMeasurement(t_in, x_in, t_out, x_out, f, j)
+            saveMeasurement(t_in, v_in,t_out, v_out, f, j)
+            print(f"finalizada medicion [{j}/{bloque.nro_mediciones}]")
             ruidos_por_freq.append(bloque.get_ruido("in"))
         procesar_bloque(
             i,
@@ -122,15 +126,16 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
             np.mean(ruidos_por_freq),
         )
         print("")
-        time.sleep(1)
 
-    gen.disable_output()
     clear_output(wait=True)
 
     print(f"\nSweep terminado en {time.time() - t0:.1f} s")
     print("Barrido completado ✅")
 
     # ===================== RESULTADOS =====================
+
+
+
 
     csv_path = os.path.join(SAVE_PATH, "bode_data.csv")
     print("Datos guardados en:", csv_path)
@@ -173,7 +178,7 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
 
     print("Incertidumbres de fase:", incerts_phases)
 
-    return freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos
+    return freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos
 
 
 def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement):
@@ -194,34 +199,13 @@ def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement):
         freq_hz=freq,
         measurement_idx=measurement + 1,
     )
-
-
 def saveResults():
     return
 
 
-def init_instruments():
-    """Inicializa VISA + VXI11 y devuelve (generador, osciloscopio)."""
-    print("Inicializando instrumentos...")
-    print("Plataforma:", platform.platform())
-
-    rm1 = visa.ResourceManager()
-    rm2 = visa.ResourceManager()
-
-    # Osciloscopio Rigol por VXI11
-    vxi11_instr = vxi11.Instrument("192.168.0.100")  # TODO: parametrizar IP
-    scope = RIGOL_DS2202(handler=None, VXI11=vxi11_instr)
-
-    # Generador Siglent por VISA TCPIP
-    gen_handler = rm2.open_resource("TCPIP::192.168.0.101::5025::INSTR")
-    gen = Siglent1032X(gen_handler)
-
-    return gen, scope
-
-
 if __name__ == "__main__":
     print("Comenzando barrido de frecuencia...\n")
-    generador, osciloscopio = init_instruments()
-    freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = run_sweep(generador, osciloscopio)
+
+    freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = run_sweep()
     assets_dir = "../Report_generator/assets"
-    createReport(freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos, assets_dir)
+    createReport(freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos, assets_dir)

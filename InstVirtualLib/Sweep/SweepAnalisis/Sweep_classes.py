@@ -1,8 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 
-from Sweep.SweepAnalisis.Sweep_clasess.FFT_buff import FFT
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.FFT_buff import FFT
 
 
 # ==================================================

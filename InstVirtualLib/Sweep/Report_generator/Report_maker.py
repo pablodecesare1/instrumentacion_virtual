@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from matplotlib.ticker import MultipleLocator
 
-from Sweep.Report_generator.TP_REPORT import TPReport
-from Sweep.Report_generator.weather_getter import fetch_weather_caba
+from InstVirtualLib.Sweep.Report_generator.TP_REPORT import TPReport
+from InstVirtualLib.Sweep.Report_generator.weather_getter import fetch_weather_caba
 
 # -------------------------
 # Parámetros de la medición
