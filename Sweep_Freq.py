@@ -7,7 +7,7 @@
 import pyvisa as visa
 from IPython.core.display_functions import clear_output
 
-from Sweep.SweepAnalisis.Sweep_classes import BloqueIO, render_status, procesar_bloque
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_classes import BloqueIO, render_status, procesar_bloque
 # Agreamos el path de las librerias
 import sys
 sys.path.insert(0, 'InstVirtualLib')

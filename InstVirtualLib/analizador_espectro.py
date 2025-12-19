@@ -5,9 +5,11 @@ Created on Fri Oct 26 10:07:15 2018
 
 """
 
-from instrument import Instrument
 import numpy as np
 from struct import unpack
+
+from InstVirtualLib.instrument import Instrument
+
 
 #------------------------------------------------------------------------------
 #------------------------- BASE CLASS -----------------------------------------

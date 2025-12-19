@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-from Sweep.SweepAnalisis.Sweep_clasess.FFT_buff import FFT
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.FFT_buff import FFT
 
 
 # ==================================================

@@ -13,7 +13,8 @@ modos.
 """
 
 import numpy as np
-import mediciones
+
+from InstVirtualLib import mediciones
 
 
 class Operador_osciloscopio(mediciones.Mediciones):

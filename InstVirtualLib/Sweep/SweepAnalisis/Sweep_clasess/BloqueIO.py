@@ -5,9 +5,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import special
 
-from Sweep.SweepAnalisis.Sweep_clasess.FFT_buff import FFT
-from Sweep.SweepAnalisis.Sweep_clasess.Signal import Signal
-from Sweep.SweepAnalisis.Sweep_strategies import TargetFrequencyBinSelector, BinSelectorStrategy
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.FFT_buff import FFT
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.Signal import Signal
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_strategies import TargetFrequencyBinSelector, BinSelectorStrategy
 
 
 class BloqueIO:

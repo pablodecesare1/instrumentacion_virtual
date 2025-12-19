@@ -1,9 +1,7 @@
-import numpy as np
-from scipy.signal import windows
 from IPython.display import clear_output
 
-from Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
-from Sweep.SweepAnalisis.Sweep_strategies import BinSelectorStrategy
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
+from InstVirtualLib.Sweep.SweepAnalisis.Sweep_strategies import BinSelectorStrategy
 
 
 

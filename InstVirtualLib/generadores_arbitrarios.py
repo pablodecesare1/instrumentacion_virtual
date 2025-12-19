@@ -13,11 +13,13 @@ clase base "generador_arbitrario"
 """
 
 # Traemos la clase base que implmenta las funciones de VISA
-from instrument import Instrument
 # Importamos el resto de las funciones a utilizar
 import numpy as np
 from struct import unpack
 import time
+
+from InstVirtualLib.instrument import Instrument
+
 
 #------------------------------------------------------------------------------
 #------------------------- BASE CLASS -----------------------------------------
