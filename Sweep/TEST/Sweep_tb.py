@@ -18,6 +18,7 @@ from IPython.core.display_functions import clear_output
 from numpy.random._examples.cffi.extending import rng
 
 from Sweep.Report_generator.Measurement_save import export_trace_to_csv
+from Sweep.Report_generator.Report_maker import createReport
 from Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
 from Sweep.SweepAnalisis.Sweep_strategies import InputPeakBinSelector
 from Sweep.SweepAnalisis.Sweep_utils import procesar_bloque
@@ -46,25 +47,27 @@ def run_sweep():
 
     t0 = time.time()
 
-
+    ## ===================== CSV SETTINGS ========================
     base_dir = "C:/TP-MEDIDAS-FINAL/instrumentacion_virtual (5)/instrumentacion_virtual/Sweep/TEST/mediciones/1kptos/"
-    peak_strategy = InputPeakBinSelector(ignore_dc=True)
 
     src = CsvSignalSource(base_dir)
     freqs_all = src.get_frequencies()
     # si querés usar todas las frecuencias del CSV:
     freq_indices = list(range(len(freqs_all)))
     freqs = np.array([freqs_all[i] for i in freq_indices], dtype=float)
-    print("Frequencias:", freqs)
-    # ahora sí: NUM_POINTS consistente con lo que vas a barrer
     NUM_POINTS = len(freqs)
+    print("Frequencias:", freqs)
+    ## ===================== CSV SETTINGS ========================
+
+
 
     # --------------- setup de arrays de resultados ---------------
-    ganancias = np.zeros(NUM_POINTS, dtype=float)
-    incerts = np.zeros(NUM_POINTS, dtype=float)
-    phases = np.zeros(NUM_POINTS, dtype=float)
-    incerts_phases = np.zeros(NUM_POINTS, dtype=float)
-    estados = ["pendiente"] * NUM_POINTS
+    ganancias       = np.zeros_like(freqs, dtype=float)
+    incerts         = np.zeros_like(freqs, dtype=float)
+    phases          = np.zeros_like(freqs, dtype=float)
+    incerts_phases  = np.zeros_like(freqs, dtype=float)
+    ruidos          = np.zeros_like(freqs, dtype=float)
+    estados         = ["pendiente"] * len(freqs)
 
     # --------------- setup del osciloscopio ---------------
     time_base_inicial = 1.0 / freqs[0]
@@ -94,29 +97,31 @@ def run_sweep():
 
         estados[i] = "midiendo"
         # render_status(freqs, estados)
-
         for j in range(bloque.nro_mediciones):
             # Adquirir trazas
             f_in, fs_in, t_in, v_in = src.get_input(freq_idx=i, medicion=meds_ok[j])
             f_out, fs_out, t_out, v_out = src.get_output(freq_idx=i, medicion=meds_ok[j])
-            amp_noise = 100
+            amp_noise = 5
             noise_in = amp_noise * rng.normal(0.0, 0.01, len(v_in))
             noise_out = amp_noise * rng.normal(0.0, 0.01, len(v_out))
             v_out += noise_out
             v_in += noise_in
             bloque.measure(v_in, v_out, t_in, t_out, fs_in=fs, fs_out=fs)  # Probamos con la fs calculada, despues vemos que onda la fs del oscilo
             print(f"finalizada medicion [{j}/{bloque.nro_mediciones}] de la freq = {f:.1f} Hz [{i}/{NUM_POINTS}]")
-            procesar_bloque(
-                i,
-                bloque,
-                estados,
-                ganancias,
-                incerts,
-                phases,
-                incerts_phases,
-            )
             saveMeasurement(t_in, v_in,t_out, v_out, f, j)
             print(f"finalizada medicion [{j}/{bloque.nro_mediciones}]")
+            ruidos_por_freq.append(bloque.get_ruido("in"))
+        procesar_bloque(
+            i,
+            bloque,
+            estados,
+            ganancias,
+            incerts,
+            phases,
+            incerts_phases,
+            ruidos,
+            np.mean(ruidos_por_freq),
+        )
         print("")
 
     clear_output(wait=True)
@@ -140,6 +145,7 @@ def run_sweep():
         freqs,
         ganancias - incerts,
         ganancias + incerts,
+        color='red',
         alpha=0.3,
         label="±σ (Rice) [dB]",
     )
@@ -154,6 +160,7 @@ def run_sweep():
         freqs,
         phases_unwrapped - incerts_phases,
         phases_unwrapped + incerts_phases,
+        color='red',
         alpha=0.3,
         label="±σ fase",
     )
@@ -168,7 +175,7 @@ def run_sweep():
 
     print("Incertidumbres de fase:", incerts_phases)
 
-    return None
+    return freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos
 
 
 def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement):
@@ -196,4 +203,6 @@ def saveResults():
 if __name__ == "__main__":
     print("Comenzando barrido de frecuencia...\n")
 
-    run_sweep()
+    freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = run_sweep()
+    assets_dir = "../Report_generator/assets"
+    createReport(freqs,ganancias, incerts, phases_unwrapped, incerts_phases, ruidos, assets_dir)
