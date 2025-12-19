@@ -29,6 +29,8 @@ def procesar_bloque(
     incerts,
     phases,
     incerts_phases,
+    ruidos,
+    ruido_mean,
     selector: BinSelectorStrategy | None = None
 ):
     """
@@ -43,6 +45,6 @@ def procesar_bloque(
     phases[idx] = fase
     incerts[idx] = U_G_db
     incerts_phases[idx] = U_fase
-
+    ruidos[idx] = ruido_mean
     estados[idx] = "completado"
     return idx
