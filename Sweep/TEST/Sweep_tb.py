@@ -39,41 +39,38 @@ MEDICIONES_POR_FREQ = 3
 
 # ===================== FUNCIONES AUXILIARES ========================
 
-def run_sweep() -> pd.DataFrame:
-    """
-    Ejecuta un barrido en frecuencia usando el generador y el osciloscopio.
-
-    Devuelve un DataFrame con columnas:
-      - freq_Hz
-      - mag_dB
-      - phase_deg
-      - incert_dB
-      - incert_phase_deg
-    """
-    freqs = np.geomspace(F_START, F_STOP, NUM_POINTS)
-    os.makedirs(SAVE_PATH, exist_ok=True)
-
+def run_sweep():
     print("Inicializando barrido...")
     print("Plataforma:", platform.platform())
 
     t0 = time.time()
 
+    os.makedirs(SAVE_PATH, exist_ok=True)
+
+    base_dir = "C:/TP-MEDIDAS-FINAL/instrumentacion_virtual (5)/instrumentacion_virtual/Sweep/TEST/mediciones/1kptos/"
+    peak_strategy = InputPeakBinSelector(ignore_dc=True)
+
+    src = CsvSignalSource(base_dir)
+    freqs_all = src.get_frequencies()
+    # si querés usar todas las frecuencias del CSV:
+    freq_indices = list(range(len(freqs_all)))
+    freqs = np.array([freqs_all[i] for i in freq_indices], dtype=float)
+    print("Frequencias:", freqs)
+    # ahora sí: NUM_POINTS consistente con lo que vas a barrer
+    NUM_POINTS = len(freqs)
+
     # --------------- setup de arrays de resultados ---------------
-    ganancias = np.zeros_like(freqs, dtype=float)
-    incerts = np.zeros_like(freqs, dtype=float)
-    phases = np.zeros_like(freqs, dtype=float)
-    incerts_phases = np.zeros_like(freqs, dtype=float)
-    estados = ["pendiente"] * len(freqs)
+    ganancias = np.zeros(NUM_POINTS, dtype=float)
+    incerts = np.zeros(NUM_POINTS, dtype=float)
+    phases = np.zeros(NUM_POINTS, dtype=float)
+    incerts_phases = np.zeros(NUM_POINTS, dtype=float)
+    estados = ["pendiente"] * NUM_POINTS
 
     # --------------- setup del osciloscopio ---------------
     time_base_inicial = 1.0 / freqs[0]
     base_dir = "/content/drive/MyDrive/SWEEP_MEDID/1kptos/"
     peak_strategy = InputPeakBinSelector(ignore_dc=True)
 
-    src = CsvSignalSource(base_dir)
-    freqs_all = src.get_frequencies()
-    freq_indices = list(range(len(freqs_all)))
-    freqs = np.array([freqs_all[i] for i in freq_indices], dtype=float)
 
 
     # --------------- barrido en frecuencia ---------------
@@ -128,18 +125,10 @@ def run_sweep() -> pd.DataFrame:
 
     # ===================== RESULTADOS =====================
 
-    df = pd.DataFrame(
-        {
-            "freq_Hz": freqs,
-            "mag_dB": ganancias,
-            "phase_deg": phases,
-            "incert_dB": incerts,
-            "incert_phase_deg": incerts_phases,
-        }
-    )
+
+
 
     csv_path = os.path.join(SAVE_PATH, "bode_data.csv")
-    df.to_csv(csv_path, index=False)
     print("Datos guardados en:", csv_path)
 
     # ---- Gráfico de Magnitud ----
@@ -178,7 +167,7 @@ def run_sweep() -> pd.DataFrame:
 
     print("Incertidumbres de fase:", incerts_phases)
 
-    return df
+    return None
 
 
 
