@@ -17,6 +17,7 @@ import pyvisa as visa
 from IPython.core.display_functions import clear_output
 from numpy.random._examples.cffi.extending import rng
 
+from Sweep.Report_generator.Measurement_save import export_trace_to_csv
 from Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
 from Sweep.SweepAnalisis.Sweep_strategies import InputPeakBinSelector
 from Sweep.SweepAnalisis.Sweep_utils import procesar_bloque
@@ -45,7 +46,6 @@ def run_sweep():
 
     t0 = time.time()
 
-    os.makedirs(SAVE_PATH, exist_ok=True)
 
     base_dir = "C:/TP-MEDIDAS-FINAL/instrumentacion_virtual (5)/instrumentacion_virtual/Sweep/TEST/mediciones/1kptos/"
     peak_strategy = InputPeakBinSelector(ignore_dc=True)
@@ -102,7 +102,8 @@ def run_sweep():
             amp_noise = 100
             noise_in = amp_noise * rng.normal(0.0, 0.01, len(v_in))
             noise_out = amp_noise * rng.normal(0.0, 0.01, len(v_out))
-
+            v_out += noise_out
+            v_in += noise_in
             bloque.measure(v_in, v_out, t_in, t_out, fs_in=fs, fs_out=fs)  # Probamos con la fs calculada, despues vemos que onda la fs del oscilo
             print(f"finalizada medicion [{j}/{bloque.nro_mediciones}] de la freq = {f:.1f} Hz [{i}/{NUM_POINTS}]")
             procesar_bloque(
@@ -114,9 +115,9 @@ def run_sweep():
                 phases,
                 incerts_phases,
             )
-            print(f"finalizada medicion [{j}/{bloque.nro_mediciones}] de la freq = {f:.1f} Hz [{i}/{NUM_POINTS}]")
+            saveMeasurement(t_in, v_in,t_out, v_out, f, j)
+            print(f"finalizada medicion [{j}/{bloque.nro_mediciones}]")
         print("")
-        time.sleep(1)
 
     clear_output(wait=True)
 
@@ -170,10 +171,29 @@ def run_sweep():
     return None
 
 
+def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement):
+    export_trace_to_csv(
+        out_dir=SAVE_PATH,
+        time_s=t_in,
+        voltage_v=v_in,
+        port="IN",
+        freq_hz=freq,
+        measurement_idx=measurement + 1,
+    )
 
+    export_trace_to_csv(
+        out_dir=SAVE_PATH,
+        time_s=t_out,
+        voltage_v=v_out,
+        port="OUT",
+        freq_hz=freq,
+        measurement_idx=measurement + 1,
+    )
+def saveResults():
+    return
 
 
 if __name__ == "__main__":
     print("Comenzando barrido de frecuencia...\n")
 
-    df_result = run_sweep()
+    run_sweep()
