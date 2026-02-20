@@ -20,6 +20,7 @@ from InstVirtualLib.Sweep.Report_generator.Measurement_save import export_trace_
 from InstVirtualLib.Sweep.SweepAnalisis.Sweep_clasess.BloqueIO import BloqueIO
 from InstVirtualLib.Sweep.SweepAnalisis.Sweep_strategies import InputPeakBinSelector
 from InstVirtualLib.Sweep.SweepAnalisis.Sweep_utils import procesar_bloque
+from InstVirtualLib.Sweep.SweepConfig import SweepConfig
 
 sys.path.insert(0, "InstVirtualLib")
 from InstVirtualLib.osciloscopios import RIGOL_DS2202              # noqa: E402
@@ -34,13 +35,21 @@ NUM_POINTS = 5          # cantidad de puntos del sweep
 AMPLITUDE_VPP = 5.0     # Vpp
 SAVE_PATH = "../../resultados_sweep"  # carpeta donde se guardan resultados
 MEDICIONES_POR_FREQ = 3
+
+
 # ======================================================================================================================================
 # ====================== PARÁMETROS DE BARRIDO =========================================================================================
+
+def set_output_div(gen: Siglent1032X, scope: RIGOL_DS2202):
+    t_out, x_out = scope.get_trace(2)
+    max_voltage = np.max(x_out)
+    scope.set_chan_DIV(max_voltage/4, 2)
+    return
 
 
 # ===================== FUNCIONES AUXILIARES ========================
 
-def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
+def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = SweepConfig()):
     """
         Ejecuta un barrido en frecuencia usando el generador y el osciloscopio.
 
@@ -55,8 +64,8 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
     print("Plataforma:", platform.platform())
 
 
-    freqs = np.geomspace(F_START, F_STOP, NUM_POINTS)
-    os.makedirs(SAVE_PATH, exist_ok=True)
+    freqs = np.geomspace(config.F_START, config.F_STOP, config.NUM_POINTS)
+    os.makedirs(config.SAVE_PATH, exist_ok=True)
 
     print("Inicializando barrido...")
     print("Plataforma:", platform.platform())
@@ -74,19 +83,19 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
     # --------------- setup del osciloscopio ---------------
     time_base_inicial = 1.0 / freqs[0]
     scope.set_BT(f"{time_base_inicial:.2f}")
-    scope.set_chan_DIV(AMPLITUDE_VPP, 1)
-    scope.set_chan_DIV(AMPLITUDE_VPP, 2)
-    scope.set_memdepth("70000")
+    scope.set_chan_DIV(config.AMPLITUDE_VPP/4, 1)
+    scope.set_chan_DIV(config.AMPLITUDE_VPP/4, 2)
+    scope.set_memdepth("7000")
 
     peak_strategy = InputPeakBinSelector(ignore_dc=True)
 
     # --------------- barrido en frecuencia ---------------
     for i, f in enumerate(freqs):
-        print(f"\n[{i + 1}/{NUM_POINTS}] Frecuencia = {f:.1f} Hz")
+        print(f"\n[{i + 1}/{config.NUM_POINTS}] Frecuencia = {f:.1f} Hz")
 
         # Configurar generador
-        gen.senoidal(f, AMPLITUDE_VPP)
-        print(f"Seteando generador: f = {f:.1f} Hz, Vpp = {AMPLITUDE_VPP}")
+        gen.senoidal(f, config.AMPLITUDE_VPP)
+        print(f"Seteando generador: f = {f:.1f} Hz, Vpp = {config.AMPLITUDE_VPP}")
         gen.enable_output()
         ruidos_por_freq = list()
 
@@ -95,13 +104,13 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
         scope.set_BT(f"{time_base:.6f}")
 
         time.sleep(2)  # dejar estabilizar
-
+        set_output_div(gen, scope)
 
 
         fs = float(scope.get_samplerate())
         bloque = BloqueIO(
             frecuencia=float(f),
-            nro_mediciones=MEDICIONES_POR_FREQ,
+            nro_mediciones=config.MEDICIONES_POR_FREQ,
             bin_selector=peak_strategy,
         )
         bloque.frecuencia = f
@@ -112,8 +121,8 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
             t_out, x_out = scope.get_trace(2)
 
             bloque.measure(x_in, x_out, t_in, t_out, fs_in=fs, fs_out=fs)  # Probamos con la fs calculada, despues vemos que onda la fs del oscilo
-            print(f"finalizada medicion [{j}/{bloque.nro_mediciones}] de la freq = {f:.1f} Hz [{i}/{NUM_POINTS}]")
-            saveMeasurement(t_in, x_in, t_out, x_out, f, j)
+            print(f"finalizada medicion [{j}/{bloque.nro_mediciones}] de la freq = {f:.1f} Hz [{i}/{config.NUM_POINTS}]")
+            saveMeasurement(t_in, x_in, t_out, x_out, f, j, config)
             ruidos_por_freq.append(bloque.get_ruido("in"))
         procesar_bloque(
             i,
@@ -137,7 +146,7 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
 
     # ===================== RESULTADOS =====================
 
-    csv_path = os.path.join(SAVE_PATH, "bode_data.csv")
+    csv_path = os.path.join(config.SAVE_PATH, "bode_data.csv")
     print("Datos guardados en:", csv_path)
 
     # ---- Gráfico de Magnitud ----
@@ -181,9 +190,9 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202):
     return freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos
 
 
-def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement):
+def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement, config:SweepConfig = SweepConfig()):
     export_trace_to_csv(
-        out_dir=SAVE_PATH,
+        out_dir=str(config.SAVE_PATH),
         time_s=t_in,
         voltage_v=v_in,
         port="IN",
@@ -192,7 +201,7 @@ def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement):
     )
 
     export_trace_to_csv(
-        out_dir=SAVE_PATH,
+        out_dir=str(config.SAVE_PATH),
         time_s=t_out,
         voltage_v=v_out,
         port="OUT",
@@ -205,7 +214,7 @@ def saveResults():
     return
 
 
-def init_instruments():
+def init_instruments(ip_gen="192.168.0.100", ip_osc="192.168.0.101"):
     """Inicializa VISA + VXI11 y devuelve (generador, osciloscopio)."""
     print("Inicializando instrumentos...")
     print("Plataforma:", platform.platform())
@@ -214,11 +223,11 @@ def init_instruments():
     rm2 = visa.ResourceManager()
 
     # Osciloscopio Rigol por VXI11
-    vxi11_instr = vxi11.Instrument("192.168.0.100")  # TODO: parametrizar IP
+    vxi11_instr = vxi11.Instrument(ip_osc)  # TODO: parametrizar IP
     scope = RIGOL_DS2202(handler=None, VXI11=vxi11_instr)
 
     # Generador Siglent por VISA TCPIP
-    gen_handler = rm2.open_resource("TCPIP::192.168.0.101::5025::INSTR")
+    gen_handler = rm2.open_resource("TCPIP::"+ ip_gen+"::INSTR")
     gen = Siglent1032X(gen_handler)
 
     return gen, scope
