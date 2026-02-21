@@ -85,6 +85,13 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
     scope.set_BT(f"{time_base_inicial:.2f}")
     scope.set_chan_DIV(config.AMPLITUDE_VPP/4, 1)
     scope.set_chan_DIV(config.AMPLITUDE_VPP/4, 2)
+    ################## SIN PROBAR ##################
+    scope.set_trigger_level("0")
+    scope.set_trigger_edge_source(1)
+    scope.set_channel_prob(canal = 1)
+    scope.set_channel_prob(canal = 2)
+    ################## SIN PROBAR ##################
+
     scope.set_memdepth("7000")
 
     peak_strategy = InputPeakBinSelector(ignore_dc=True)
