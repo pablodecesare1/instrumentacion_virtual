@@ -746,6 +746,9 @@ class RIGOL_DS2202 (osciloscopio):
         self.SET_TRIGGER_EDGE_SOURCE_CH2=":TRIGger:EDGe:SOURce CHAN2"
         self.GET_TRIGGER_EDGE_SOURCE=":TRIGger:EDGe:SOURce?"
 
+        self.SET_CHANNEL_PROBE_CH1=":CHAN1:PROBe {}"
+        self.SET_CHANNEL_PROBE_CH2=":CHAN2:PROBe {}"
+
         self.read_termination = '\r'
         
          # ---- Canal Vertical
@@ -862,6 +865,12 @@ class RIGOL_DS2202 (osciloscopio):
     
     def get_samplerate(self):
         return self.query(self.GET_SAMPLE_RATE) #✅
+
+    def set_channel_prob(self,canal, valor = 1): #Sin Probar
+        if canal == 1:
+            self.write(self.SET_CHANNEL_PROBE_CH1.format(valor))
+        if canal == 2:
+            self.write(self.SET_CHANNEL_PROBE_CH2.format(valor))
         
     def get_trace(self,canal, VERBOSE = 1): #✅
         self.write(f":WAV:SOUR CHAN{canal}")
