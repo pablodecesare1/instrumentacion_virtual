@@ -1,15 +1,25 @@
-# Dependencias detectadas en el proyecto (pyproject.toml + imports en archivos .py)
-matplotlib>=3.10.3,<4.0.0
-numpy>=2.3.1,<3.0.0
-pandas>=2.3.1,<3.0.0
-scipy>=1.16.0,<2.0.0
-pyvisa>=1.15.0,<2.0.0
-pyvisa-py>=0.8.0,<0.9.0
-pyserial>=3.5,<4.0.0
-pyusb>=1.3.1,<2.0.0
+# scientific
+numpy==2.3.1
+pandas==2.3.1
+scipy==1.16.0
+matplotlib==3.10.3
+
+# Instrument control
+pyvisa==1.15.0
+pyvisa-py==0.8.0
 python-vxi11>=0.9
-requests>=2.32.0
-Pillow>=10.0.0
-fpdf2>=2.7.0
+pyserial==3.5
+pyusb==1.3.1
+
+# UI
 ttkbootstrap>=1.10.1
+Pillow>=10.0.0
+
+# Notebooks
 ipython>=9.0.0
+ipykernel==6.29.5
+jupyter==1.1.1
+
+# Utils
+requests>=2.32.0
+fpdf2>=2.7.0
