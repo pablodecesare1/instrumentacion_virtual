@@ -40,11 +40,26 @@ MEDICIONES_POR_FREQ = 3
 # ======================================================================================================================================
 # ====================== PARÁMETROS DE BARRIDO =========================================================================================
 
-def set_output_div(gen: Siglent1032X, scope: RIGOL_DS2202):
-    t_out, x_out = scope.get_trace(2)
-    max_voltage = np.max(x_out)
-    scope.set_chan_DIV(max_voltage/4, 2)
-    return
+import numpy as np
+
+def set_output_div(gen: Siglent1032X, scope: RIGOL_DS2202, ch=2,
+                   method="percentile", headroom=1.25, q=99.9, min_div=0.02):
+    t_out, x_out = scope.get_trace(ch)
+    x_out = np.asarray(x_out)
+
+    # estimación de pico robusta
+    x0 = x_out - np.mean(x_out)  # saco DC
+    if method == "rms":
+        vrms = np.sqrt(np.mean(x0**2))
+        vpk = np.sqrt(2) * vrms
+    else:  # "percentile"
+        vpk = np.percentile(np.abs(x0), q)
+
+    # DIV: querés que el pico ocupe ~2 divisiones (como vos)
+    div = (vpk / 2.0) * headroom
+    div = max(div, min_div)
+
+    scope.set_chan_DIV(div, ch)
 
 
 # ===================== FUNCIONES AUXILIARES ========================
@@ -95,7 +110,7 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
     scope.set_memdepth("7000")
 
     peak_strategy = InputPeakBinSelector(ignore_dc=True)
-
+    time.sleep(5)
     # --------------- barrido en frecuencia ---------------
     for i, f in enumerate(freqs):
         print(f"\n[{i + 1}/{config.NUM_POINTS}] Frecuencia = {f:.1f} Hz")
@@ -108,9 +123,9 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
 
         # Configurar timebase del osciloscopio según frecuencia
         time_base = 1.0 / f
-        scope.set_BT(f"{time_base:.6f}")
+        scope.set_BT(f"{time_base*1:.6f}")
 
-        time.sleep(2)  # dejar estabilizar
+        time.sleep(1)  # dejar estabilizar
         set_output_div(gen, scope)
 
 
@@ -142,8 +157,8 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
             ruidos,
             np.mean(ruidos_por_freq),
         )
+        yield i
         print("")
-        time.sleep(1)
 
     gen.disable_output()
     clear_output(wait=True)
@@ -185,6 +200,7 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
     )
     ax2.set_xlabel("Frecuencia [Hz]")
     ax2.set_ylabel("Fase [rad]")
+    ax2.set_ylim(-np.pi/2,0)
     ax2.grid(True, which="both")
     ax2.legend(loc="best")
     ax2.set_xlim(freqs[0], freqs[-1])
@@ -198,23 +214,7 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
 
 
 def saveMeasurement(t_in, v_in, t_out, v_out, freq, measurement, config:SweepConfig = SweepConfig()):
-    export_trace_to_csv(
-        out_dir=str(config.SAVE_PATH),
-        time_s=t_in,
-        voltage_v=v_in,
-        port="IN",
-        freq_hz=freq,
-        measurement_idx=measurement + 1,
-    )
-
-    export_trace_to_csv(
-        out_dir=str(config.SAVE_PATH),
-        time_s=t_out,
-        voltage_v=v_out,
-        port="OUT",
-        freq_hz=freq,
-        measurement_idx=measurement + 1,
-    )
+    return
 
 
 def saveResults():

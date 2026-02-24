@@ -1,17 +1,28 @@
 import socket
 import ipaddress
 from InstVirtualLib.Sweep.GUI.network_finder.constants import PUERTO_SCPI, TIMEOUT_SCPI
-
-def obtener_ip_local() -> str:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+import subprocess
+import re
+def obtener_ip_local():
+    """
+    Devuelve una IPv4 "real" (no loopback) en Linux.
+    No depende de 'default route'.
+    """
     try:
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
+        salida = subprocess.check_output(["ip", "-o", "-4", "addr", "show", "up"], text=True)
+        # Ejemplo de línea:
+        # 2: enp1s0    inet 10.42.0.1/24 brd 10.42.0.255 scope global enp1s0\       valid_lft forever preferred_lft forever
+        for linea in salida.splitlines():
+            m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", linea)
+            if m:
+                ip = m.group(1)
+                if not ip.startswith("127."):
+                    return ip
     except Exception:
-        ip = "127.0.0.1"
-    finally:
-        s.close()
-    return ip
+        pass
+
+    return "127.0.0.1"
+
 
 def obtener_red_local() -> list[ipaddress.IPv4Address]:
     ip = obtener_ip_local()
