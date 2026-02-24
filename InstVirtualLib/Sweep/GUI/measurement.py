@@ -3,7 +3,8 @@ from InstVirtualLib.Sweep.Report_generator.Report_maker import createReport
 from InstVirtualLib.Sweep.SweepConfig import SweepConfig
 from InstVirtualLib.Sweep.Sweeper import init_instruments, run_sweep
 
-def run_measurement(params: dict):
+
+def run_measurement(params: dict, progress_callback=None):
     """
     params esperado:
       ip_osc, ip_gen, f_inicio, f_stop, puntos, mediciones, amplitud
@@ -22,13 +23,14 @@ def run_measurement(params: dict):
 
     generador, osciloscopio = init_instruments(config.IP_GEN, config.IP_SCOPE)
 
-    run_sweep_generator = run_sweep(
-        generador, osciloscopio, config=config
-    )
+    run_sweep_generator = run_sweep(generador, osciloscopio, config=config)
+    total_frecuencias = int(params["puntos"])
 
     while True:
         try:
-            print(next(run_sweep_generator))
+            estado_actual = next(run_sweep_generator)
+            if progress_callback is not None:
+                progress_callback(estado_actual, total_frecuencias)
         except StopIteration as e:
             freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = e.value
             break
