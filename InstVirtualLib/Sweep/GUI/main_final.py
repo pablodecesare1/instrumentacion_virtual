@@ -6,5 +6,4 @@ from InstVirtualLib.instrument import Instrument
 from InstVirtualLib.osciloscopios import RIGOL_DS2202
 
 if __name__ == "__main__":
-
     App().mainloop()
