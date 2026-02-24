@@ -1,6 +1,5 @@
 import threading
 import ipaddress
-import tkinter as tk
 from tkinter import ttk
 
 import ttkbootstrap as tb
@@ -15,7 +14,6 @@ except Exception:
     Icon = None
 
 from .gui_queue import GuiQueue
-from InstVirtualLib.Sweep.GUI.network_finder.scanner import escanear_red
 from .measurement import run_measurement
 from InstVirtualLib.osciloscopios import RIGOL_DS2202
 
@@ -61,23 +59,16 @@ class App(tb.Window):
 
     def _set_busy(self, busy: bool, *, task: str = "idle", status: str | None = None):
         if status is not None:
-            if task == "scan":
-                self._set_status(status, "info")
-            elif task == "measure":
+            if task == "measure":
                 self._set_status(status, "success")
             else:
                 self._set_status(status, "secondary")
 
         state = "disabled" if busy else "normal"
-        for b in (self.btn_scan, self.btn_assign_osc, self.btn_assign_gen, self.btn_measure):
+        for b in (self.btn_idn, self.btn_measure):
             b.configure(state=state)
 
-        if busy and task == "scan":
-            self.progress.configure(mode="determinate")
-            self.progress.stop()
-            self.progress["value"] = 0
-            self.lbl_pct.configure(text="0%")
-        elif busy and task == "measure":
+        if busy and task == "measure":
             total = self._measurement_total if self._measurement_total > 0 else 1
             self.progress.stop()
             self.progress.configure(mode="determinate", maximum=total)
@@ -123,7 +114,7 @@ class App(tb.Window):
         )
         tb.Label(
             header,
-            text="Scan SCPI → asignás Osc/Gen → corrés el sweep → sale reporte. Clean.",
+            text="Consultás IDN → guardás IP+IDN → corrés el sweep → sale reporte. Clean.",
             bootstyle="secondary",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
 
@@ -162,56 +153,23 @@ class App(tb.Window):
         self.entry_ip_gen.grid(row=8, column=1, columnspan=2, sticky="ew", pady=6)
 
         # Right: Instruments
-        card_scan = tb.Labelframe(content, text=" Instrumentos SCPI ", padding=14, bootstyle="primary")
+        card_scan = tb.Labelframe(content, text=" Historial de IDN ", padding=14, bootstyle="primary")
         card_scan.grid(row=0, column=1, sticky="nsew")
         card_scan.columnconfigure(0, weight=1)
         card_scan.rowconfigure(2, weight=1)
 
         tb.Label(
             card_scan,
-            text="Doble click: asignación automática (Osc si vacío, sino Gen).",
+            text="Cada consulta IDN se guarda como IP + resultado.",
             bootstyle="secondary",
         ).grid(row=0, column=0, sticky="w", pady=(0, 10))
 
         actions = tb.Frame(card_scan)
         actions.grid(row=1, column=0, sticky="ew", pady=(0, 10))
-        actions.columnconfigure(4, weight=1)
+        actions.columnconfigure(1, weight=1)
 
         # Icons (builtin vector, con fallback)
-        img_search = self._make_icon("search", 16)
-        img_osc = self._make_icon("display", 16)       # si no existe, cae a texto
-        img_gen = self._make_icon("music", 16)         # si no existe, cae a texto
         img_play = self._make_icon("play", 16)
-
-        self.btn_scan = tb.Button(
-            actions,
-            text=" Buscar",
-            image=img_search,
-            compound=LEFT if img_search else None,
-            bootstyle="info",
-            command=self._escaneo_en_hilo,
-        )
-        self.btn_scan.grid(row=0, column=0, padx=(0, 8))
-
-        self.btn_assign_osc = tb.Button(
-            actions,
-            text=" Asignar a Osc",
-            image=img_osc,
-            compound=LEFT if img_osc else None,
-            bootstyle="secondary",
-            command=lambda: self._assign_selected("osc"),
-        )
-        self.btn_assign_osc.grid(row=0, column=1, padx=(0, 8))
-
-        self.btn_assign_gen = tb.Button(
-            actions,
-            text=" Asignar a Gen",
-            image=img_gen,
-            compound=LEFT if img_gen else None,
-            bootstyle="secondary",
-            command=lambda: self._assign_selected("gen"),
-        )
-        self.btn_assign_gen.grid(row=0, column=2, padx=(0, 8))
 
         self.btn_measure = tb.Button(
             actions,
@@ -221,7 +179,7 @@ class App(tb.Window):
             bootstyle="success",
             command=self._iniciar_medicion,
         )
-        self.btn_measure.grid(row=0, column=5, sticky="e")
+        self.btn_measure.grid(row=0, column=2, sticky="e")
 
         # Table (ttk.Treeview)
         table_frame = tb.Frame(card_scan)
@@ -229,7 +187,7 @@ class App(tb.Window):
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(0, weight=1)
 
-        columns = ("ip", "proto", "idn")
+        columns = ("ip", "idn")
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=14)
         self.tree.grid(row=0, column=0, sticky="nsew")
 
@@ -238,15 +196,13 @@ class App(tb.Window):
         self.tree.configure(yscrollcommand=vsb.set)
 
         self.tree.heading("ip", text="IP", command=lambda: self._sort_by("ip"))
-        self.tree.heading("proto", text="Proto", command=lambda: self._sort_by("proto"))
         self.tree.heading("idn", text="IDN", command=lambda: self._sort_by("idn"))
 
         self.tree.column("ip", width=160, anchor="w", stretch=False)
-        self.tree.column("proto", width=90, anchor="center", stretch=False)
-        self.tree.column("idn", width=520, anchor="w", stretch=True)
+        self.tree.column("idn", width=610, anchor="w", stretch=True)
 
-        self.tree.bind("<Double-Button-1>", lambda e: self._assign_selected("auto"))
-        self.tree.bind("<Return>", lambda e: self._assign_selected("auto"))
+        self.tree.bind("<Double-Button-1>", lambda e: self._set_idn_ip_from_selected())
+        self.tree.bind("<Return>", lambda e: self._set_idn_ip_from_selected())
 
         # IDN manual
         idn_frame = tb.Frame(card_scan)
@@ -311,7 +267,7 @@ class App(tb.Window):
         self.entry_ip_osc.insert(0, "192.168.0.100")
         self.entry_ip_gen.insert(0, "192.168.0.101")
 
-        self._update_table([])
+        self._clear_table()
 
     # =========================
     # Queue tick
@@ -320,16 +276,25 @@ class App(tb.Window):
         self.gui_queue.drain()
         self.after(50, self._tick_queue)
 
-    # =========================
-    # Scan
-    # =========================
-    def _set_progress(self, pct: float):
-        if str(self.progress["mode"]) == "determinate":
-            self.progress["value"] = pct
-            self.lbl_pct.configure(text=f"{pct:0.0f}%")
-
     def _set_idn_result(self, text: str, style: str = "secondary"):
         self.lbl_idn_result.configure(text=f"Resultado IDN: {text}", bootstyle=style)
+
+    def _set_idn_ip_from_selected(self):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        values = self.tree.item(sel[0], "values")
+        if values and values[0]:
+            self.entry_idn_ip.delete(0, "end")
+            self.entry_idn_ip.insert(0, values[0])
+
+    def _save_idn_result(self, ip: str, idn: str):
+        for iid in self.tree.get_children():
+            values = self.tree.item(iid, "values")
+            if values and values[0] == ip:
+                self.tree.item(iid, values=(ip, idn))
+                return
+        self.tree.insert("", "end", values=(ip, idn))
 
     def _idn_worker(self, ip: str):
         try:
@@ -342,6 +307,7 @@ class App(tb.Window):
                 pass
 
             self.gui_queue.put(lambda: self._set_idn_result(idn, "success"))
+            self.gui_queue.put(lambda ip_addr=ip, idn_text=idn: self._save_idn_result(ip_addr, idn_text))
             self.gui_queue.put(lambda: self._toast("IDN", "Consulta IDN OK.", "success"))
         except Exception as e:
             msg = str(e) if str(e) else "No se pudo consultar el IDN."
@@ -373,50 +339,16 @@ class App(tb.Window):
             current_int = max(0, min(int(round(current)), total))
             self.progress["value"] = current_int
             self.lbl_pct.configure(text=f"{current_int}/{total}")
-            self._set_status(f"Midiendo frecuencia {current_int}/{total}", "success")
+            TIEMPO_POR_FRECUENCIA = 4
+            self._set_status(
+                f"Midiendo frecuencia {current_int}/{total}. Tiempo restante estimado: {TIEMPO_POR_FRECUENCIA * (total - current_int)} s    ",
+                "success")
         except (TypeError, ValueError):
             self._set_status(f"Midiendo... {estado_actual}", "success")
 
     def _clear_table(self):
         for iid in self.tree.get_children():
             self.tree.delete(iid)
-
-    def _parse_result_line(self, r: str):
-        parts = [p.strip() for p in r.split("|", 2)]
-        ip = parts[0].replace("🟢", "").replace("✅", "").strip()
-        proto = parts[1] if len(parts) > 1 else "SCPI"
-        idn = parts[2] if len(parts) > 2 else ""
-        return ip, proto, idn
-
-    def _update_table(self, resultados: list[str]):
-        self._clear_table()
-
-        if not resultados:
-            self._set_busy(False, task="idle", status="Listo.")
-            self._toast("Scan", "No se detectaron instrumentos SCPI.", "warning")
-            return
-
-        for r in resultados:
-            try:
-                ip, proto, idn = self._parse_result_line(r)
-                ipaddress.ip_address(ip)
-                self.tree.insert("", "end", values=(ip, proto, idn))
-            except Exception:
-                continue
-
-        self._set_busy(False, task="idle", status="Listo.")
-        self._toast("Scan", f"Encontré {len(self.tree.get_children())} instrumento(s).", "success")
-
-    def _escaneo_en_hilo(self):
-        self._clear_table()
-        self._set_busy(True, task="scan", status="Escaneando instrumentos SCPI...")
-        self._toast("Scan", "Escaneando red… esto puede tardar un toque.", "info")
-
-        threading.Thread(
-            target=escanear_red,
-            args=(self.gui_queue, self._set_progress, self._update_table),
-            daemon=True,
-        ).start()
 
     # =========================
     # Sorting
@@ -438,47 +370,6 @@ class App(tb.Window):
         rows.sort(key=key, reverse=not ascending)
         for idx, (_, iid) in enumerate(rows):
             self.tree.move(iid, "", idx)
-
-    # =========================
-    # Selection -> assign
-    # =========================
-    def _get_selected_ip(self) -> str | None:
-        sel = self.tree.selection()
-        if not sel:
-            return None
-        values = self.tree.item(sel[0], "values")
-        return values[0] if values else None
-
-    def _assign_selected(self, target: str):
-        ip = self._get_selected_ip()
-        if not ip:
-            self._toast("Selección", "Seleccioná un instrumento primero.", "warning")
-            return
-
-        try:
-            ipaddress.ip_address(ip)
-        except Exception:
-            self._toast("Selección", "La IP seleccionada no es válida.", "danger")
-            return
-
-        if target == "auto":
-            if not self.entry_ip_osc.get().strip():
-                target = "osc"
-            elif not self.entry_ip_gen.get().strip():
-                target = "gen"
-            else:
-                target = "osc"
-
-        if target == "osc":
-            self.entry_ip_osc.delete(0, tk.END)
-            self.entry_ip_osc.insert(0, ip)
-            self._set_status(f"Asignado Osc: {ip}", "info")
-            self._toast("Asignación", f"Osciloscopio ← {ip}", "info")
-        elif target == "gen":
-            self.entry_ip_gen.delete(0, tk.END)
-            self.entry_ip_gen.insert(0, ip)
-            self._set_status(f"Asignado Gen: {ip}", "info")
-            self._toast("Asignación", f"Generador ← {ip}", "info")
 
     def _iniciar_idn(self):
         ip = self.entry_idn_ip.get().strip()
