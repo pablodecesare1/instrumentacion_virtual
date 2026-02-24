@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from matplotlib.ticker import MultipleLocator
+from pathlib import Path
 
 from InstVirtualLib.Sweep.Report_generator.TP_REPORT import TPReport
 from InstVirtualLib.Sweep.Report_generator.weather_getter import fetch_weather_caba
@@ -15,7 +16,17 @@ NUM_POINTS = 5
 AMPLITUDE_VPP = 5.0
 MEDICIONES_POR_FREQ = 3
 
-def createReport(freqs, G_db, incerts, phases_unwrapped, incerts_phases, ruidos, assets_dir):
+def createReport(
+    freqs,
+    G_db,
+    incerts,
+    phases_unwrapped,
+    incerts_phases,
+    ruidos,
+    assets_dir,
+    output_dir=None,
+    report_name=None,
+):
     pdf = TPReport(fonts_dir=f"{assets_dir}/Fonts")
 
     pdf.add_cover(
@@ -121,5 +132,15 @@ def createReport(freqs, G_db, incerts, phases_unwrapped, incerts_phases, ruidos,
         figsize=(7, 3), dpi=140
     )
 
-    pdf.output("TP_reporte.pdf")
-    print("Generado: TP_reporte.pdf")
+    output_folder = Path(output_dir).expanduser() if output_dir else Path.cwd()
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    safe_name = (report_name or "TP_reporte").strip()
+    if not safe_name:
+        safe_name = "TP_reporte"
+    if not safe_name.lower().endswith(".pdf"):
+        safe_name = f"{safe_name}.pdf"
+
+    output_path = output_folder / safe_name
+    pdf.output(str(output_path))
+    print(f"Generado: {output_path}")
