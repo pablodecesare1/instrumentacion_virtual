@@ -6,6 +6,7 @@ from tkinter import ttk
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from ttkbootstrap.widgets import ToastNotification
+import vxi11
 
 # Iconos vectoriales builtin (con fallback)
 try:
@@ -16,6 +17,7 @@ except Exception:
 from .gui_queue import GuiQueue
 from InstVirtualLib.Sweep.GUI.network_finder.scanner import escanear_red
 from .measurement import run_measurement
+from InstVirtualLib.osciloscopios import RIGOL_DS2202
 
 
 class App(tb.Window):
@@ -246,6 +248,33 @@ class App(tb.Window):
         self.tree.bind("<Double-Button-1>", lambda e: self._assign_selected("auto"))
         self.tree.bind("<Return>", lambda e: self._assign_selected("auto"))
 
+        # IDN manual
+        idn_frame = tb.Frame(card_scan)
+        idn_frame.grid(row=3, column=0, sticky="ew", pady=(10, 0))
+        idn_frame.columnconfigure(1, weight=1)
+
+        tb.Label(idn_frame, text="IP para IDN").grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self.entry_idn_ip = tb.Entry(idn_frame)
+        self.entry_idn_ip.grid(row=0, column=1, sticky="ew")
+        self.entry_idn_ip.insert(0, "192.168.0.100")
+
+        self.btn_idn = tb.Button(
+            idn_frame,
+            text="Hacer IDN",
+            bootstyle="outline-info",
+            command=self._iniciar_idn,
+        )
+        self.btn_idn.grid(row=0, column=2, sticky="e", padx=(8, 0))
+
+        self.lbl_idn_result = tb.Label(
+            idn_frame,
+            text="Resultado IDN: -",
+            bootstyle="secondary",
+            anchor="w",
+            justify="left",
+        )
+        self.lbl_idn_result.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0))
+
         # Bottom
         bottom = tb.Frame(self, padding=(18, 6, 18, 14))
         bottom.grid(row=2, column=0, sticky="ew")
@@ -298,6 +327,28 @@ class App(tb.Window):
         if str(self.progress["mode"]) == "determinate":
             self.progress["value"] = pct
             self.lbl_pct.configure(text=f"{pct:0.0f}%")
+
+    def _set_idn_result(self, text: str, style: str = "secondary"):
+        self.lbl_idn_result.configure(text=f"Resultado IDN: {text}", bootstyle=style)
+
+    def _idn_worker(self, ip: str):
+        try:
+            vxi11_instr = vxi11.Instrument(ip)
+            scope = RIGOL_DS2202(handler=None, VXI11=vxi11_instr)
+            idn = scope.print_ID()
+            try:
+                scope.close()
+            except Exception:
+                pass
+
+            self.gui_queue.put(lambda: self._set_idn_result(idn, "success"))
+            self.gui_queue.put(lambda: self._toast("IDN", "Consulta IDN OK.", "success"))
+        except Exception as e:
+            msg = str(e) if str(e) else "No se pudo consultar el IDN."
+            self.gui_queue.put(lambda m=msg: self._set_idn_result(m, "danger"))
+            self.gui_queue.put(lambda m=msg: self._toast("IDN", m, "danger", duration=4200))
+        finally:
+            self.gui_queue.put(lambda: self.btn_idn.configure(state="normal"))
 
     def _prepare_measure_progress(self, total: int):
         self._measurement_total = max(int(total), 1)
@@ -428,6 +479,21 @@ class App(tb.Window):
             self.entry_ip_gen.insert(0, ip)
             self._set_status(f"Asignado Gen: {ip}", "info")
             self._toast("Asignación", f"Generador ← {ip}", "info")
+
+    def _iniciar_idn(self):
+        ip = self.entry_idn_ip.get().strip()
+        try:
+            ipaddress.ip_address(ip)
+        except Exception:
+            self.entry_idn_ip.configure(bootstyle="danger")
+            self._set_idn_result("IP inválida.", "danger")
+            self._toast("IDN", "Ingresá una IP válida.", "warning")
+            return
+
+        self.entry_idn_ip.configure(bootstyle="")
+        self.btn_idn.configure(state="disabled")
+        self._set_idn_result("Consultando...", "info")
+        threading.Thread(target=self._idn_worker, args=(ip,), daemon=True).start()
 
     # =========================
     # Measurement
