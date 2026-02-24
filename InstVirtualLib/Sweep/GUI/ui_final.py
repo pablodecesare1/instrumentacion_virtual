@@ -267,9 +267,9 @@ class App(tb.Window):
         return e
 
     def _defaults(self):
-        self.entry_f_inicio.insert(0, "20")
+        self.entry_f_inicio.insert(0, "200")
         self.entry_f_stop.insert(0, "20000")
-        self.entry_puntos.insert(0, "5")
+        self.entry_puntos.insert(0, "20")
         self.entry_mediciones.insert(0, "3")
         self.entry_amplitud.insert(0, "5")
 

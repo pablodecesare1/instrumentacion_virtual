@@ -33,7 +33,9 @@ class Instrument:
             self.vxi11_handle.close()
 
     def print_ID(self):
-        print(self.INSTR_ID)
+        idn = self.INSTR_ID
+        print(idn)
+        return idn
 
 
     def write(self, command_string):

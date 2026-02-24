@@ -19,7 +19,7 @@ def escanear_red(gui_queue, on_progress, on_done):
         nonlocal contador
         ip = str(ip_obj)
 
-        idn = consultar_idn(ip)
+        idn = consultar_idn("10.42.0.47")
         if idn:
             resultados.append(f"🟢 {ip} | SCPI | {idn}")
 

@@ -5,30 +5,57 @@ import socket
 import ipaddress
 import time
 import csv
+import subprocess
+import re
+
+# ==========================
+# PYVISA (IDN)
+# ==========================
+# Backend "@py" = pyvisa-py (no NI-VISA)
+import pyvisa
+from vxi11 import vxi11
+
+from InstVirtualLib.instrument import Instrument
+from InstVirtualLib.osciloscopios import RIGOL_DS2202
 
 # ==========================
 # CONFIGURACIÓN
 # ==========================
 
-PUERTOS_SCPI = [5025, 5555, 4000, 3000]
-PUERTO_PING = 80
-TIMEOUT = 0.4
+PUERTOS_SCPI = [5025, 5555, 4000, 3000]  # SCPI típicos
+PUERTO_PING = 80                         # solo para "activo"
+TIMEOUT = 0.4                            # timeout general sockets
 MAX_HILOS = 80
 
+# Timeout VISA en milisegundos (PyVISA usa ms)
+TIMEOUT_VISA_MS = 800
+
+# ResourceManager global (evita recrearlo 300 veces)
+# "@py" fuerza pyvisa-py. Si tenés NI-VISA, podés usar ResourceManager() sin "@py".
+RM = pyvisa.ResourceManager("@py")
+
+
 # ==========================
-# UTILIDADES RED
+# UTILIDADES RED (LINUX)
 # ==========================
 
 def obtener_ip_local():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    """
+    Devuelve una IPv4 "real" (no loopback) en Linux.
+    No depende de 'default route'.
+    """
     try:
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-    except:
-        ip = "127.0.0.1"
-    finally:
-        s.close()
-    return ip
+        salida = subprocess.check_output(["ip", "-o", "-4", "addr", "show", "up"], text=True)
+        for linea in salida.splitlines():
+            m = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", linea)
+            if m:
+                ip = m.group(1)
+                if not ip.startswith("127."):
+                    return ip
+    except Exception:
+        pass
+
+    return "127.0.0.1"
 
 
 def obtener_red_local():
@@ -44,6 +71,11 @@ def resolver_nombre(ip):
 
 
 def ip_activa(ip):
+    """
+    Chequeo rápido de "actividad": intenta conectar al puerto 80.
+    OJO: muchos dispositivos no tienen 80 abierto.
+    Si querés detectar más, probá varios puertos acá.
+    """
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(TIMEOUT)
@@ -54,17 +86,32 @@ def ip_activa(ip):
         return False
 
 
-def consultar_idn(ip):
-    for puerto in PUERTOS_SCPI:
-        try:
-            with socket.create_connection((ip, puerto), timeout=TIMEOUT) as s:
-                s.sendall(b"*IDN?\n")
-                respuesta = s.recv(1024).decode().strip()
-                if respuesta:
-                    return respuesta, puerto
-        except:
-            continue
-    return None, None
+# ==========================
+# CONSULTA IDN CON PYVISA
+# ==========================
+
+
+
+def consultar_idn(ip: str):
+    """
+    Devuelve (idn, info_puerto_o_metodo)
+
+    Estrategia:
+    1) Probar SOCKET en PUERTOS_SCPI (raw SCPI por TCP)
+       TCPIP0::<ip>::<port>::SOCKET
+    2) Probar INSTR (VXI-11 / HiSLIP según soporte del backend)
+       TCPIP0::<ip>::INSTR
+    """
+    # 1) RAW SOCKET por puertos típicos
+    try:
+        xi11_instr = vxi11.Instrument("10.42.0.47")  # TODO: parametrizar IP
+        scope = RIGOL_DS2202(handler=None, VXI11=xi11_instr)
+        return scope.print_ID()
+    except Exception:
+        pass
+    return None
+
+
 
 
 # ==========================
@@ -73,6 +120,7 @@ def consultar_idn(ip):
 
 resultados_totales = []
 instrumentos_detectados = []
+
 
 # ==========================
 # ESCANEO
@@ -97,20 +145,15 @@ def escanear_red():
         nonlocal contador
         ip = str(ip)
 
-        nombre = resolver_nombre(ip)
+        if True:
 
-        if ip_activa(ip):
-
-            idn, puerto = consultar_idn(ip)
+            idn = consultar_idn(ip)
 
             if idn:
-                texto = f"🟢 {ip} | SCPI | Puerto {puerto} | {idn}"
-                instrumentos_detectados.append((ip, puerto, idn))
+                texto = f"🟢 {ip} | {idn}"
+                instrumentos_detectados.append((ip, idn))
             else:
-                if nombre:
-                    texto = f"🟡 {ip} | Activo | {nombre}"
-                else:
-                    texto = f"🟡 {ip} | Activo | Desconocido"
+                texto = f"🟡 {ip} | Activo | Desconocido"
 
             resultados_totales.append(texto)
 
@@ -147,10 +190,8 @@ def mostrar_resultados():
         lista_dispositivos.insert(tk.END, r)
 
     if instrumentos_detectados:
-        for ip, puerto, idn in instrumentos_detectados:
-            lista_instrumentos.insert(
-                tk.END, f"{ip} | Puerto {puerto} | {idn}"
-            )
+        for ip, info, idn in instrumentos_detectados:
+            lista_instrumentos.insert(tk.END, f"{ip} | {info} | {idn}")
     else:
         lista_instrumentos.insert(tk.END, "No se detectaron instrumentos SCPI.")
 

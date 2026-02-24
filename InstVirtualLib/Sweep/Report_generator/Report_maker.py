@@ -57,8 +57,7 @@ def createReport(freqs, G_db, incerts, phases_unwrapped, incerts_phases, ruidos,
             rows=weather["rows"]
         )
     except Exception as e:
-        pdf.add_text(f"No se pudo obtener el clima actual (API): {e}", font_size=11)
-
+        pass
     # --------------------------------------
     # Tabla: Frecuencia vs Ruido (freq/ruidos)
     # --------------------------------------
@@ -104,7 +103,7 @@ def createReport(freqs, G_db, incerts, phases_unwrapped, incerts_phases, ruidos,
 
         plt.xlabel("Frecuencia [Hz]")
         plt.ylabel("phases_unwrapped [°]")
-        plt.ylim(-180, 180)
+
 
         ax = plt.gca()
         ax.yaxis.set_major_locator(MultipleLocator(45))

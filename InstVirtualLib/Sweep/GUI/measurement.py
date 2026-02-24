@@ -22,9 +22,16 @@ def run_measurement(params: dict):
 
     generador, osciloscopio = init_instruments(config.IP_GEN, config.IP_SCOPE)
 
-    freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = run_sweep(
+    run_sweep_generator = run_sweep(
         generador, osciloscopio, config=config
     )
 
-    assets_dir = "./Report_generator/assets"
+    while True:
+        try:
+            print(next(run_sweep_generator))
+        except StopIteration as e:
+            freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = e.value
+            break
+
+    assets_dir = "../Report_generator/assets"
     createReport(freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos, assets_dir)

@@ -236,7 +236,6 @@ class Siglent1032X(generador_arbitrario):
     def senoidal(self,freq=1e3,amp=0, canal = 0, offset = 0):
         """ frecuencia en Hz, tension pico """
         print(f"modificar la frecuencia a {freq} y amplitud {amp}" )
-        nombre = input("Inserte un valor para avanzar")
 
         
         ch_str = self.get_channel_string(canal)
