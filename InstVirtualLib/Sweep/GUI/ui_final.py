@@ -29,6 +29,8 @@ class App(tb.Window):
         self.gui_queue = GuiQueue()
         self._icons = {}            # evita GC en PhotoImage
         self._sort_state = {}       # sorting por columna
+        self._measurement_total = 0
+        self._measurement_zero_based = None
 
         self._build_widgets()
         self._defaults()
@@ -74,14 +76,18 @@ class App(tb.Window):
             self.progress["value"] = 0
             self.lbl_pct.configure(text="0%")
         elif busy and task == "measure":
-            self.progress.configure(mode="indeterminate")
-            self.progress.start(12)
-            self.lbl_pct.configure(text="")
+            total = self._measurement_total if self._measurement_total > 0 else 1
+            self.progress.stop()
+            self.progress.configure(mode="determinate", maximum=total)
+            self.progress["value"] = 0
+            self.lbl_pct.configure(text=f"0/{self._measurement_total}" if self._measurement_total > 0 else "")
         else:
             self.progress.stop()
             self.progress.configure(mode="determinate")
             self.progress["value"] = 0
             self.lbl_pct.configure(text="")
+            self._measurement_total = 0
+            self._measurement_zero_based = None
 
     def _make_icon(self, name: str, size: int = 16):
         """
@@ -293,6 +299,33 @@ class App(tb.Window):
             self.progress["value"] = pct
             self.lbl_pct.configure(text=f"{pct:0.0f}%")
 
+    def _prepare_measure_progress(self, total: int):
+        self._measurement_total = max(int(total), 1)
+        self._measurement_zero_based = None
+        self.progress.stop()
+        self.progress.configure(mode="determinate", maximum=self._measurement_total)
+        self.progress["value"] = 0
+        self.lbl_pct.configure(text=f"0/{self._measurement_total}")
+
+    def _set_measure_progress(self, estado_actual, total: int):
+        total = max(int(total), 1)
+        if self._measurement_total != total:
+            self._prepare_measure_progress(total)
+
+        try:
+            current = float(estado_actual)
+            if self._measurement_zero_based is None:
+                self._measurement_zero_based = (current == 0)
+            if self._measurement_zero_based:
+                current += 1
+
+            current_int = max(0, min(int(round(current)), total))
+            self.progress["value"] = current_int
+            self.lbl_pct.configure(text=f"{current_int}/{total}")
+            self._set_status(f"Midiendo frecuencia {current_int}/{total}", "success")
+        except (TypeError, ValueError):
+            self._set_status(f"Midiendo... {estado_actual}", "success")
+
     def _clear_table(self):
         for iid in self.tree.get_children():
             self.tree.delete(iid)
@@ -463,8 +496,16 @@ class App(tb.Window):
     def _measurement_worker(self):
         try:
             params = self._collect_params()
+            total_puntos = int(params["puntos"])
+            self.gui_queue.put(lambda t=total_puntos: self._prepare_measure_progress(t))
             self.gui_queue.put(lambda: self._set_status("Midiendo... (no toques nada 🙃)", "success"))
-            run_measurement(params)
+
+            def progress_callback(estado_actual, total):
+                self.gui_queue.put(
+                    lambda estado=estado_actual, total_med=total: self._set_measure_progress(estado, total_med)
+                )
+
+            run_measurement(params, progress_callback=progress_callback)
             self.gui_queue.put(lambda: self._toast("Medición", "Finalizada correctamente ✅", "success", duration=3200))
             self.gui_queue.put(lambda: self._set_busy(False, task="idle", status="Listo."))
         except Exception as e:
