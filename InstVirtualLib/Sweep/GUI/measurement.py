@@ -35,5 +35,18 @@ def run_measurement(params: dict, progress_callback=None):
             freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos = e.value
             break
 
+    if progress_callback is not None:
+        progress_callback("generando_reporte", total_frecuencias)
+
     assets_dir = "../Report_generator/assets"
-    createReport(freqs, ganancias, incerts, phases_unwrapped, incerts_phases, ruidos, assets_dir)
+    createReport(
+        freqs,
+        ganancias,
+        incerts,
+        phases_unwrapped,
+        incerts_phases,
+        ruidos,
+        assets_dir,
+        output_dir=params.get("carpeta_report"),
+        report_name=params.get("nombre_report"),
+    )

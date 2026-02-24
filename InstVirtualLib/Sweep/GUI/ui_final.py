@@ -1,6 +1,8 @@
 import threading
 import ipaddress
+from pathlib import Path
 from tkinter import ttk
+from tkinter import filedialog
 
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
@@ -152,6 +154,26 @@ class App(tb.Window):
         self.entry_ip_gen = tb.Entry(card_params)
         self.entry_ip_gen.grid(row=8, column=1, columnspan=2, sticky="ew", pady=6)
 
+        tb.Label(card_params, text="Nombre Del reporte").grid(row=9, column=0, sticky="w", pady=6)
+        self.entry_nombre_report = tb.Entry(card_params)
+        self.entry_nombre_report.grid(row=9, column=1, columnspan=2, sticky="ew", pady=6)
+
+        tb.Label(card_params, text="Ubicacion del reporte").grid(row=10, column=0, sticky="w", pady=6)
+        carpeta_frame = tb.Frame(card_params)
+        carpeta_frame.grid(row=10, column=1, columnspan=2, sticky="ew", pady=6)
+        carpeta_frame.columnconfigure(0, weight=1)
+
+        self.entry_carpeta_report = tb.Entry(carpeta_frame, state="readonly")
+        self.entry_carpeta_report.grid(row=0, column=0, sticky="ew")
+
+        self.btn_browse_report = tb.Button(
+            carpeta_frame,
+            text="Examinar...",
+            bootstyle="outline-secondary",
+            command=self._browse_report_folder,
+        )
+        self.btn_browse_report.grid(row=0, column=1, sticky="e", padx=(8, 0))
+
         # Right: Instruments
         card_scan = tb.Labelframe(content, text=" Historial de IDN ", padding=14, bootstyle="primary")
         card_scan.grid(row=0, column=1, sticky="nsew")
@@ -267,6 +289,9 @@ class App(tb.Window):
         self.entry_ip_osc.insert(0, "192.168.0.100")
         self.entry_ip_gen.insert(0, "192.168.0.101")
 
+        self.entry_nombre_report.insert(0, "Reporteee")
+        self._set_report_folder(str(Path.home()))
+
         self._clear_table()
 
     # =========================
@@ -278,6 +303,22 @@ class App(tb.Window):
 
     def _set_idn_result(self, text: str, style: str = "secondary"):
         self.lbl_idn_result.configure(text=f"Resultado IDN: {text}", bootstyle=style)
+
+    def _set_report_folder(self, folder_path: str):
+        self.entry_carpeta_report.configure(state="normal")
+        self.entry_carpeta_report.delete(0, "end")
+        self.entry_carpeta_report.insert(0, folder_path)
+        self.entry_carpeta_report.configure(state="readonly")
+
+    def _browse_report_folder(self):
+        current = self.entry_carpeta_report.get().strip() or str(Path.home())
+        selected = filedialog.askdirectory(
+            title="Elegir carpeta para el reporte",
+            initialdir=current,
+            mustexist=False,
+        )
+        if selected:
+            self._set_report_folder(selected)
 
     def _set_idn_ip_from_selected(self):
         sel = self.tree.selection()
@@ -328,6 +369,12 @@ class App(tb.Window):
         total = max(int(total), 1)
         if self._measurement_total != total:
             self._prepare_measure_progress(total)
+
+        if isinstance(estado_actual, str) and estado_actual.lower() == "generando_reporte":
+            self.progress["value"] = total
+            self.lbl_pct.configure(text=f"{total}/{total}")
+            self._set_status("Generando reporte...", "success")
+            return
 
         try:
             current = float(estado_actual)
@@ -433,6 +480,8 @@ class App(tb.Window):
         puntos = parse(self.entry_puntos, "Puntos")
         mediciones = parse(self.entry_mediciones, "Mediciones/freq")
         amplitud = parse(self.entry_amplitud, "Amplitud Vpp")
+        nombre_report = parse(self.entry_nombre_report, "Nombre del reporte")
+        carpeta_report = parse(self.entry_carpeta_report, "Ubicación del reporte")
 
         if puntos <= 0 or mediciones <= 0 or amplitud <= 0:
             mark_bad(self.entry_puntos)
@@ -448,6 +497,8 @@ class App(tb.Window):
             "puntos": int(puntos),
             "mediciones": int(mediciones),
             "amplitud": float(amplitud),
+            "nombre_report": str(nombre_report),
+            "carpeta_report": str(carpeta_report),
         }
 
     def _measurement_worker(self):
