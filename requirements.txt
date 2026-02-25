@@ -11,10 +11,6 @@ python-vxi11>=0.9
 pyserial==3.5
 pyusb==1.3.1
 
-# UI
-ttkbootstrap>=1.10.1
-Pillow>=10.0.0
-
 # Notebooks
 ipython>=9.0.0
 ipykernel==6.29.5
