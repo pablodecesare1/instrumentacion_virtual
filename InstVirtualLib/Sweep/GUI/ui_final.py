@@ -304,6 +304,22 @@ class App(tb.Window):
     def _set_idn_result(self, text: str, style: str = "secondary"):
         self.lbl_idn_result.configure(text=f"Resultado IDN: {text}", bootstyle=style)
 
+    def _format_seconds(self, total_seconds: int) -> str:
+        total_seconds = max(int(total_seconds), 0)
+        hours = total_seconds // 3600
+        rem = total_seconds % 3600
+        minutes = rem // 60
+        seconds = rem % 60
+
+        parts = []
+        if hours > 0:
+            parts.append(f"{hours} h")
+        if minutes > 0:
+            parts.append(f"{minutes} min")
+        if seconds > 0 or not parts:
+            parts.append(f"{seconds} seg")
+        return ", ".join(parts)
+
     def _set_report_folder(self, folder_path: str):
         self.entry_carpeta_report.configure(state="normal")
         self.entry_carpeta_report.delete(0, "end")
@@ -386,9 +402,10 @@ class App(tb.Window):
             current_int = max(0, min(int(round(current)), total))
             self.progress["value"] = current_int
             self.lbl_pct.configure(text=f"{current_int}/{total}")
-            TIEMPO_POR_FRECUENCIA = 4
+            TIEMPO_POR_FRECUENCIA = 3.8
+            remaining_seconds = TIEMPO_POR_FRECUENCIA * (total - current_int)
             self._set_status(
-                f"Midiendo frecuencia {current_int}/{total}. Tiempo restante estimado: {TIEMPO_POR_FRECUENCIA * (total - current_int)} s    ",
+                f"Midiendo frecuencia {current_int}/{total}. Tiempo restante estimado: {self._format_seconds(remaining_seconds)}.",
                 "success")
         except (TypeError, ValueError):
             self._set_status(f"Midiendo... {estado_actual}", "success")
