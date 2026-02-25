@@ -105,6 +105,9 @@ def run_sweep(gen: Siglent1032X, scope: RIGOL_DS2202, config:SweepConfig = Sweep
     scope.set_trigger_edge_source(1)
     scope.set_channel_prob(canal = 1)
     scope.set_channel_prob(canal = 2)
+    scope.set_trigger_coup_AC()
+    scope.set_chan_OFFSET("0",1)
+    scope.set_chan_OFFSET("0",2)
     ################## SIN PROBAR ##################
 
     scope.set_memdepth("7000")
