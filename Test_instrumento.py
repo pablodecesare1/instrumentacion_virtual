@@ -21,19 +21,22 @@ rm = visa.ResourceManager()
 print(rm.list_resources())
 
 for resource_obj in rm.list_resources():
-    # Abrimos un instrumento
-    instrument_handler = rm.open_resource(resource_obj)
+	try:
+		# Abrimos un instrumento
+		instrument_handler=rm.open_resource(resource_obj)
 
-    print('Handler:')
-    print(instrument_handler)
+		print('Handler:')
+		print(instrument_handler)
 
-    # Implementamos la clase instrumento base
-    instrumento = Instrument(instrument_handler)
+		# Implementamos la clase instrumento base
+		instrumento = Instrument(instrument_handler)
 
-    # Imprimimos el ID el instrumento
-    print("Conectado un: ")
-    instrumento.print_ID()
-
-    instrumento.close()
-
+		# Imprimimos el ID el instrumento
+		print("Conectado un: ")
+		instrumento.print_ID()
+		
+		instrumento.close()
+	except Exception as e:
+		print("Error al abrir el recurso: ", resource_obj)
+		print(e)
 

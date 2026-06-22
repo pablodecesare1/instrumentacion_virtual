@@ -15,15 +15,24 @@ dependencies = [
     "numpy (>=2.3.1,<3.0.0)",
     "matplotlib (>=3.10.3,<4.0.0)",
     "scipy (>=1.16.0,<2.0.0)",
-    "pandas (>=2.3.1,<3.0.0)"
+    "pandas (>=2.3.1,<3.0.0)",
+    "python-vxi11>=0.9",
+    "requests>=2.34.2",
+    "fpdf2>=2.8.7",
 ]
 
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry.group.dev.dependencies]
-ipykernel = "^6.29.5"
-jupyter = "^1.1.1"
+[tool.setuptools.packages.find]
+include = ["InstVirtualLib", "InstVirtualLib.*"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5,<7.0.0",
+    "jupyter>=1.1.1,<2.0.0",
+    "ipython>=9.0.0,<10.0.0",
+]
 

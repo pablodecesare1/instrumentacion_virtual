@@ -2,3 +2,5 @@ Libreria/__pycache__/
 __pycache__/
 *.pyc
 untracked/
+.venv/
+instrumentacion_virtual.egg-info/

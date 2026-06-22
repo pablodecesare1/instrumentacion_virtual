@@ -27,29 +27,21 @@ Ubuntu 24.04:
 sudo apt install python3-pyvisa-py
 ```
 
-2. Instalar entorno:
+2. Instalar entorno con uv:
 
-Opcion 1: Con poetry:
-
-Instalar poetry:
+Instalar uv:
 ```sh
-curl -sSL https://install.python-poetry.org | python3 -
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Instalar dependencias
+Instalar dependencias (incluyendo las de desarrollo):
 ```sh
-poetry install --dev
+uv sync
 ```
 
-Para activar la consola del python instalado por poetry deben copiar y ejecutar eel comando que se muestra al ejecutar:
+Activar el entorno virtual:
 ```sh
-poetry env activate
-```
-
-Opcion 2: Con lo que quieran usando el `requirements.txt`, por ejemplo pip:
-
-```sh
-pip3 install -r requirements.txt
+source .venv/bin/activate
 ```
 
 3. Dar acceso al usb al usuario de python:
