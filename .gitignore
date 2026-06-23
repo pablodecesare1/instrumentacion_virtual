@@ -4,3 +4,5 @@ __pycache__/
 untracked/
 .venv/
 instrumentacion_virtual.egg-info/
+.ruff_cache/
+.pre-commit-config-local.yaml
