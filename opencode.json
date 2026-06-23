@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "instrumentacion": {
+      "type": "local",
+      "command": ["uv", "run", "-m", "inst_virtual_lib.mcp.server"],
+      "enabled": true
+    }
+  }
+}

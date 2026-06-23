@@ -19,6 +19,7 @@ dependencies = [
     "python-vxi11>=0.9",
     "requests>=2.34.2",
     "fpdf2>=2.8.7",
+    "mcp>=1.0.0,<2.0.0",
 ]
 
 

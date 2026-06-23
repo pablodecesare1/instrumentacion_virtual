@@ -61,3 +61,16 @@ sudo usermod -a -G usbusers $USER
 ```
 
 4. Reiniciar el equipo
+
+
+# Uso con OpenCode
+
+Este repositorio incluye un servidor MCP en `inst_virtual_lib/mcp/` y un
+agente de [opencode](https://github.com/anomalyco/opencode) (`instrumentacion`) para controlar instrumentos desde
+el chat de opencode. El agente aparece automáticamente en el selector al
+abrir opencode desde este directorio.
+
+El MCP expone 6 herramientas: `listar_dispositivos`, `acciones_disponibles`,
+`operadores_disponibles`, `accion_instrumento`, `ejecutar_operador` y
+`comando_visa`. La subred VXI-11 se pasa como parámetro opcional a
+`listar_dispositivos`, no hay configuración fija.
