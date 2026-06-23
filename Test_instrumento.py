@@ -1,18 +1,18 @@
-# -*- coding: utf-8 -*-
 """
 @author: Ramiro
 """
 
 # Traemos la libreria VISA
-import pyvisa as visa
-
 # Agreamos el path de las librerias
 import sys
 
-sys.path.insert(0, 'InstVirtualLib')
+import pyvisa as visa
+
+sys.path.insert(0, "inst_virtual_lib")
 # Traemos la clase base que implmenta las funciones de VISA
-from InstVirtualLib.instrument import Instrument as Instrument
 import platform
+
+from inst_virtual_lib.instrument import Instrument as Instrument
 
 # Pedimos la lista de instrumentos
 platforma = platform.platform()
@@ -21,22 +21,21 @@ rm = visa.ResourceManager()
 print(rm.list_resources())
 
 for resource_obj in rm.list_resources():
-	try:
-		# Abrimos un instrumento
-		instrument_handler=rm.open_resource(resource_obj)
+    try:
+        # Abrimos un instrumento
+        instrument_handler = rm.open_resource(resource_obj)
 
-		print('Handler:')
-		print(instrument_handler)
+        print("Handler:")
+        print(instrument_handler)
 
-		# Implementamos la clase instrumento base
-		instrumento = Instrument(instrument_handler)
+        # Implementamos la clase instrumento base
+        instrumento = Instrument(instrument_handler)
 
-		# Imprimimos el ID el instrumento
-		print("Conectado un: ")
-		instrumento.print_ID()
-		
-		instrumento.close()
-	except Exception as e:
-		print("Error al abrir el recurso: ", resource_obj)
-		print(e)
+        # Imprimimos el ID el instrumento
+        print("Conectado un: ")
+        instrumento.print_id()
 
+        instrumento.close()
+    except Exception as e:
+        print("Error al abrir el recurso: ", resource_obj)
+        print(e)
