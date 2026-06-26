@@ -47,7 +47,7 @@ class OperadorOsciloscopio(mediciones.Mediciones):
 
         tiempo, tension = self.instrument.get_trace(canal, verbose)
 
-        return self.THD(tiempo, tension)
+        return self.thd(tiempo, tension)
 
     def medir_rc(self, r, canal_vg="1", canal_vr="2", metodo="FFT", verbose=False):
         """
