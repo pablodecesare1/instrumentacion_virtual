@@ -28,10 +28,6 @@ class Instrument:
         self.INSTR_ID = self.query(self.COMMAND_ID)
 
     def close(self):
-        if self.connector_is_usb:
-            self.instrument_handle.before_close()  # wtf??
-            # self.instrument_handle.clear()
-
         self.instrument_handle.close()
 
     def print_id(self):
@@ -47,11 +43,7 @@ class Instrument:
     def query(self, command_string):
         """Implement visa query command"""
 
-        return (
-            self.instrument_handle.query(command_string)
-            if self.connector_is_usb
-            else self.instrument_handle.ask(command_string)
-        )
+        return self.instrument_handle.query(command_string)
 
     def read(self):
         """Implement visa read command"""

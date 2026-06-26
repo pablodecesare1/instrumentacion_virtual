@@ -28,7 +28,7 @@ class OperadorOsciloscopio(mediciones.Mediciones):
 
         tiempo, tension = self.instrument.get_trace(canal, verbose)
 
-        return self.Vrms(tiempo, tension)
+        return self.vrms(tiempo, tension)
 
     def medir_detaf(self, canal=1, verbose=False):
         pass
