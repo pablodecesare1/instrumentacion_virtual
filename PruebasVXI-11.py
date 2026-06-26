@@ -1,3 +1,6 @@
+# Esto es solo un placeholder para una nueva implementacion, ver :
+# https://github.com/pablodecesare1/instrumentacion_virtual/issues/13
+
 import matplotlib.pyplot as plt
 import numpy as np
 import vxi11
