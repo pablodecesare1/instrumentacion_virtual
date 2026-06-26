@@ -226,8 +226,8 @@ class GwInstek(Osciloscopio):
         tension_volt = self.parsear_canal(memoria_canal, offset, scale, -1, verbose)
         # tiempo_seg = np.arange(0,len(tension_volt),1)*time
         tiempo_seg = np.linspace(
-            0, time * 8, len(tension_volt)
-        )  # 8 porque observamos eso, CHECKEAR
+            0, time * 16, len(tension_volt)
+        )  # 16 porque observamos eso, CHECKEAR
 
         return tiempo_seg, tension_volt
 
