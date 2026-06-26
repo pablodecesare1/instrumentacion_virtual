@@ -187,6 +187,12 @@ class GwInstek(Osciloscopio):
         super().__init__(handler)
         self.read_termination = "\r"
 
+        self.SET_CH1_VDIV = ":CHAN1:SCAL {}"
+        self.SET_CH2_VDIV = ":CHAN2:SCAL {}"
+
+        self.GET_CH1_VDIV = ":CHAN1:SCAL?"
+        self.GET_CH2_VDIV = ":CHAN2:SCAL?"
+
     def set_chan_div(self, valor, canal):
         if canal == 1:
             self.write(self.SET_CH1_VDIV.format(valor))
@@ -258,14 +264,14 @@ class GwInstek(Osciloscopio):
         if verbose:
             print("Header decodificado:")
             print(
-                str(chr(h)),
-                str(chr(f)),
-                str(chr(nn[0])),
-                str(chr(nn[1])),
-                str(chr(nn[2])),
-                str(chr(nn[3])),
+                str(chr(int(h[0]))),
+                str(chr(int(f[0]))),
+                str(chr(int(nn[0]))),
+                str(chr(int(nn[1]))),
+                str(chr(int(nn[2]))),
+                str(chr(int(nn[3]))),
                 t,
-                ch,
+                int(ch[0]),
             )
 
         # Ahora convertimos los valores del ADC a volts
