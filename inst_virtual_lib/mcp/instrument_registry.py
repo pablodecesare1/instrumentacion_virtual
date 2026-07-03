@@ -511,6 +511,7 @@ class InstrumentRegistry:
 
     def __init__(self):
         self._connections: dict[str, tuple[Instrument, str]] = {}
+        self._rm: pyvisa.ResourceManager | None = None
 
     # ------------------------------------------------------------------
     # Descubrimiento
@@ -563,6 +564,16 @@ class InstrumentRegistry:
         return unique
 
     # ------------------------------------------------------------------
+    # ResourceManager
+    # ------------------------------------------------------------------
+
+    def _get_rm(self) -> pyvisa.ResourceManager:
+        """Retorna el ResourceManager global, creandolo si es necesario."""
+        if self._rm is None:
+            self._rm = pyvisa.ResourceManager()
+        return self._rm
+
+    # ------------------------------------------------------------------
     # Conexion
     # ------------------------------------------------------------------
 
@@ -571,7 +582,7 @@ class InstrumentRegistry:
         if device_id in self._connections:
             return self._connections[device_id]
 
-        rm = pyvisa.ResourceManager()
+        rm = self._get_rm()
 
         try:
             # Intentar conexion VISA
@@ -581,7 +592,6 @@ class InstrumentRegistry:
             match = _match_idn(idn)
             if match is None:
                 res.close()
-                rm.close()
                 raise ValueError(f"No se reconoce el instrumento: {idn}")
 
             cls, category = match
@@ -597,7 +607,11 @@ class InstrumentRegistry:
             return inst, category
 
         except pyvisa.Error:
-            rm.close()
+            # Si falla, cerramos el recurso si se abrio
+            try:
+                res.close()
+            except Exception:
+                pass
 
         # Intentar conexion VXI-11 directa
         if device_id.startswith("vxi11_"):
@@ -717,3 +731,9 @@ class InstrumentRegistry:
         """Cierra todas las conexiones."""
         for device_id in list(self._connections.keys()):
             self.close(device_id)
+        if self._rm is not None:
+            try:
+                self._rm.close()
+            except Exception:
+                pass
+            self._rm = None
