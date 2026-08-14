@@ -251,10 +251,12 @@ class GwInstek(Osciloscopio):
         nn = np.frombuffer(memoria_canal, dtype=np.int8, count=4, offset=2)
 
         # Leemos la base de tiempo
-        t = np.frombuffer(memoria_canal, dtype=np.dtype(np.uint8).newbyteorder("<"), count=4, offset=6)
+        t = np.frombuffer(
+            memoria_canal, dtype=np.dtype(np.uint8).newbyteorder("<"), count=4, offset=6
+        )
         # Viene en big-endian (IEEE 754), convertimos a little-endian
         # (revertimos el orden de los bytes)
-        
+
         # Leemos el numero de canal del que proviene (dado antes por "ACQ#:")
         ch = np.frombuffer(memoria_canal, dtype=np.int8, count=1, offset=10)
 
