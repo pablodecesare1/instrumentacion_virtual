@@ -43,7 +43,11 @@ IDN_PATTERNS: list[tuple[callable, type[Instrument], str]] = [
         Mso3024A,
         "osciloscopio",
     ),
-    (lambda idn: "GW INSTEK" in idn.upper() or idn.upper().startswith("GW,"), GwInstek, "osciloscopio"),
+    (
+        lambda idn: "GW INSTEK" in idn.upper() or idn.upper().startswith("GW,"),
+        GwInstek,
+        "osciloscopio",
+    ),
     (lambda idn: "TEKTRONIX" in idn.upper(), TektronixDsoDpoMsoTds, "osciloscopio"),
     (lambda idn: "SDS2102" in idn, SDS2102, "osciloscopio"),
     (lambda idn: "RIGOL" in idn.upper() and "DS2202" in idn.upper(), RigolDs2202, "osciloscopio"),
@@ -596,10 +600,7 @@ class InstrumentRegistry:
 
             cls, category = match
 
-            if cls is RigolDs2202 or issubclass(cls, Osciloscopio):
-                inst = cls(res)
-            else:
-                inst = cls(res)
+            inst = cls(res) if cls is RigolDs2202 or issubclass(cls, Osciloscopio) else cls(res)
 
             self._connections[device_id] = (inst, category)
             # NOTA: NO cerrar rm! El ResourceManager debe mantenerse abierto
@@ -608,10 +609,10 @@ class InstrumentRegistry:
 
         except pyvisa.Error:
             # Si falla, cerramos el recurso si se abrio
-            try:
-                res.close()
-            except Exception:
-                pass
+            if self._rm is not None:
+                with contextlib.suppress(Exception):
+                    self._rm.close()
+                self._rm = None
 
         # Intentar conexion VXI-11 directa
         if device_id.startswith("vxi11_"):
@@ -732,8 +733,6 @@ class InstrumentRegistry:
         for device_id in list(self._connections.keys()):
             self.close(device_id)
         if self._rm is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._rm.close()
-            except Exception:
-                pass
             self._rm = None

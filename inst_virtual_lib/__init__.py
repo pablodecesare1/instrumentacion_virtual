@@ -13,12 +13,12 @@ from inst_virtual_lib.instrument import Instrument
 from inst_virtual_lib.mediciones import Mediciones
 from inst_virtual_lib.operador import OperadorGenerador, OperadorOsciloscopio
 from inst_virtual_lib.osciloscopios import (
+    SDS2102,
     GwInstek,
     Mso3024A,
     Osciloscopio,
     Rigol,
     RigolDs2202,
-    SDS2102,
     TektronixDsoDpoMsoTds,
 )
 
